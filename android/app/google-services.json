@@ -1,0 +1,98 @@
+{
+  "project_info": {
+    "project_number": "536909553761",
+    "project_id": "feed-609dd",
+    "storage_bucket": "feed-609dd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:536909553761:android:335ca4c02ed968094e8a20",
+        "android_client_info": {
+          "package_name": "com.example.feed_flutter"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "536909553761-dkq98bd4c84sb73b3lakfhrmnhp3bl80.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.feed_flutter",
+            "certificate_hash": "0851e4d6fe4fd2ea69fd6ea192f69aa5de3c46bd"
+          }
+        },
+        {
+          "client_id": "536909553761-b91jfbv4082fs327f6rcq556ptp3he31.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCNK28Lqfjb9Cq5MIWXPHg2vy0zHUbg2jI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "536909553761-6hv3b4su0t41cgerve6ppb4t99e05c6s.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "536909553761-gmvapt0cfh67vlj0b7qr033asde003tm.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.feedFlutter"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:536909553761:android:c5a48bd6eb55400d4e8a20",
+        "android_client_info": {
+          "package_name": "com.hashtag12345.feed_native"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "536909553761-50ta4ar22dgugcjuk214tksnrvrardjc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.hashtag12345.feed_native",
+            "certificate_hash": "0851e4d6fe4fd2ea69fd6ea192f69aa5de3c46bd"
+          }
+        },
+        {
+          "client_id": "536909553761-b91jfbv4082fs327f6rcq556ptp3he31.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCNK28Lqfjb9Cq5MIWXPHg2vy0zHUbg2jI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "536909553761-6hv3b4su0t41cgerve6ppb4t99e05c6s.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "536909553761-gmvapt0cfh67vlj0b7qr033asde003tm.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.feedFlutter"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

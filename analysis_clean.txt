@@ -1,0 +1,26 @@
+﻿Analyzing feed_flutter...                                       
+
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\main\conversation_screen.dart:649:61 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps - lib\screens\main\conversation_screen.dart:984:9 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\screens\main\conversation_screen.dart:1041:9 - use_build_context_synchronously
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\main\custom_camera_screen.dart:23:58 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\main\custom_camera_screen.dart:24:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\main\custom_camera_screen.dart:25:43 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\main\custom_camera_screen.dart:26:43 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\main\custom_camera_screen.dart:27:46 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\main\custom_camera_screen.dart:250:56 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\main\custom_camera_screen.dart:373:46 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\main\user_profile_screen.dart:559:39 - use_build_context_synchronously
+  error - The named parameter 'call' is required, but there's no corresponding argument - lib\services\cometchat_service.dart:229:18 - missing_required_argument
+  error - The named parameter 'callObject' isn't defined - lib\services\cometchat_service.dart:230:13 - undefined_named_parameter
+  error - The function 'CallSettingsBuilder' isn't defined - lib\services\cometchat_service.dart:335:37 - undefined_function
+  error - The named parameter 'onEndCall' isn't defined - lib\services\cometchat_service.dart:338:13 - undefined_named_parameter
+  error - The function 'CallSettingsBuilder' isn't defined - lib\services\cometchat_service.dart:402:39 - undefined_function
+  error - The named parameter 'onEndCall' isn't defined - lib\services\cometchat_service.dart:405:15 - undefined_named_parameter
+  error - The named parameter 'settings' is required, but there's no corresponding argument - lib\services\push_notification_service.dart:38:33 - missing_required_argument
+  error - Too many positional arguments: 0 expected, but 1 found - lib\services\push_notification_service.dart:39:9 - extra_positional_arguments_could_be_named
+  error - The named parameter 'id' is required, but there's no corresponding argument - lib\services\push_notification_service.dart:189:31 - missing_required_argument
+  error - Too many positional arguments: 0 expected, but 4 found - lib\services\push_notification_service.dart:190:7 - extra_positional_arguments_could_be_named
+  error - The named parameter 'id' is required, but there's no corresponding argument - lib\services\push_notification_service.dart:224:31 - missing_required_argument
+  error - Too many positional arguments: 0 expected, but 4 found - lib\services\push_notification_service.dart:225:7 - extra_positional_arguments_could_be_named
+
