@@ -83,7 +83,8 @@ class _HiddenContentScreenState extends State<HiddenContentScreen> with SingleTi
       builder: (context, userSnap) {
         if (!userSnap.hasData) return const Center(child: CircularProgressIndicator());
         
-        final List<String> postIds = List<String>.from(userSnap.data?.get(field) ?? []);
+        final userData = userSnap.data?.data() as Map<String, dynamic>?;
+        final List<String> postIds = List<String>.from(userData?[field] ?? []);
         
         if (postIds.isEmpty) {
           return Center(

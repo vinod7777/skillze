@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../widgets/post_card.dart';
 import '../../theme/app_theme.dart';
+import '../../screens/main/comments_modal.dart';
 
 class PostDetailScreen extends StatelessWidget {
   final String postId;
@@ -43,8 +44,26 @@ class PostDetailScreen extends StatelessWidget {
             return const Center(child: Text('Post not found'));
           }
 
-          return SingleChildScrollView(
-            child: PostCard(doc: snapshot.data!),
+          final postDoc = snapshot.data!;
+          
+          return Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      PostCard(doc: postDoc, isClickable: false),
+                      const Divider(),
+                      // Inline comments list part
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.6,
+                        child: CommentsModal(postDoc: postDoc),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           );
         },
       ),

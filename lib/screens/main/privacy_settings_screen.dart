@@ -17,7 +17,8 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
   bool _showOnlineStatus = true;
   bool _allowTagging = true;
   bool _isGhostMode = false;
-  bool _isTwoFactorEnabled = false;
+  String _mentionsSetting = 'Everyone';
+  String _commentsSetting = 'Everyone';
   bool _isLoading = true;
   final _auth = FirebaseAuth.instance;
 
@@ -38,14 +39,15 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
           _showOnlineStatus = data?['showOnlineStatus'] ?? true;
           _allowTagging = data?['allowTagging'] ?? true;
           _isGhostMode = data?['isGhostMode'] ?? false;
-          _isTwoFactorEnabled = data?['isTwoFactorEnabled'] ?? false;
+          _mentionsSetting = data?['mentionsSetting'] ?? 'Everyone';
+          _commentsSetting = data?['commentsSetting'] ?? 'Everyone';
           _isLoading = false;
         });
       }
     }
   }
 
-  Future<void> _updatePrivacy(String field, bool value) async {
+  Future<void> _updatePrivacy(String field, dynamic value) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       await FirebaseFirestore.instance.collection('users').doc(user.uid).update({field: value});
@@ -109,20 +111,21 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
             'Change your account password.',
             _showChangePasswordDialog,
           ),
-          _buildSwitchTile(
-            'Two-factor Authentication',
-            'Add an extra layer of security.',
-            _isTwoFactorEnabled,
-            (v) {
-              setState(() => _isTwoFactorEnabled = v);
-              _updatePrivacy('isTwoFactorEnabled', v);
-            },
-          ),
 
           const Divider(height: 32),
           _buildSectionHeader('Interactions'),
-          _buildListTile(Icons.alternate_email_rounded, 'Mentions', 'Everyone'),
-          _buildListTile(Icons.comment_outlined, 'Comments', 'Everyone'),
+          _buildListTile(
+            Icons.alternate_email_rounded,
+            'Mentions',
+            _mentionsSetting,
+            () => _showSelectionDialog('Mentions', 'mentionsSetting', _mentionsSetting, ['Everyone', 'People you follow', 'No one']),
+          ),
+          _buildListTile(
+            Icons.comment_outlined,
+            'Comments',
+            _commentsSetting,
+            () => _showSelectionDialog('Comments', 'commentsSetting', _commentsSetting, ['Everyone', 'People you follow', 'No one']),
+          ),
           _buildSwitchTile(
             'Activity Status',
             'Allow accounts to see when you were last active.',
@@ -182,7 +185,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
     );
   }
 
-  Widget _buildListTile(IconData icon, String title, String trailing) {
+  Widget _buildListTile(IconData icon, String title, String trailing, VoidCallback onTap) {
     return ListTile(
       leading: Icon(icon, color: context.textMed),
       title: Text(title, style: TextStyle(fontWeight: FontWeight.w600, color: context.textHigh)),
@@ -193,8 +196,43 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
           Icon(Icons.chevron_right_rounded, color: context.textLow),
         ],
       ),
-      onTap: () {},
+      onTap: onTap,
     );
+  }
+
+  Future<void> _showSelectionDialog(String title, String field, String currentValue, List<String> options) async {
+    final result = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: context.surfaceColor,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: context.textHigh)),
+              ),
+              ...options.map((option) => ListTile(
+                    title: Text(option, style: TextStyle(color: context.textHigh)),
+                    trailing: option == currentValue ? Icon(Icons.check_circle_rounded, color: context.primary) : null,
+                    onTap: () => Navigator.pop(context, option),
+                  )),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (result != null && result != currentValue && mounted) {
+      setState(() {
+        if (field == 'mentionsSetting') _mentionsSetting = result;
+        if (field == 'commentsSetting') _commentsSetting = result;
+      });
+      _updatePrivacy(field, result);
+    }
   }
 
   void _showChangePasswordDialog() {

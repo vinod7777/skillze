@@ -204,17 +204,10 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
           children: [
             _buildHeader(),
             Expanded(
-              child: Column(
-                children: [
-                  if (viewMode != 'skills') _buildStoriesBar(),
-                  Expanded(
-                    child: Builder(builder: (context) {
-                      if (viewMode == 'skills') return _buildSkillsList();
-                      return _buildPostsList();
-                    }),
-                  ),
-                ],
-              ),
+              child: Builder(builder: (context) {
+                if (viewMode == 'skills') return _buildSkillsList();
+                return _buildPostsList();
+              }),
             ),
           ],
         ),
@@ -316,8 +309,8 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
     final DateTime twentyFourHoursAgo = DateTime.now().subtract(const Duration(hours: 24));
 
     return Container(
-      height: 120,
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      height: 105,
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('stories')
@@ -403,8 +396,8 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
             child: Stack(
               children: [
                 Container(
-                  width: 74,
-                  height: 74,
+                  width: 64,
+                  height: 64,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: (stories.isNotEmpty && !stories.every((s) => s.seenBy.contains(FirebaseAuth.instance.currentUser?.uid))) 
@@ -427,7 +420,7 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                     child: UserAvatar(
                       imageUrl: imageUrl,
                       name: name,
-                      radius: 31,
+                      radius: 26,
                     ),
                   ),
                 ),
@@ -449,9 +442,9 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
               ],
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           SizedBox(
-            width: 72,
+            width: 64,
             child: Text(
               name,
               maxLines: 1,
@@ -668,7 +661,15 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                     padding: const EdgeInsets.only(bottom: 120),
                     itemCount: filteredList.length,
                     itemBuilder: (context, index) {
-                      return PostCard(doc: filteredList[index]);
+                      return PostCard(
+                        doc: filteredList[index],
+                        onDeleted: () {
+                          setState(() {
+                            final docId = filteredList[index].id;
+                            _posts.removeWhere((p) => p.id == docId);
+                          });
+                        },
+                      );
                     },
                     physics: const BouncingScrollPhysics(),
                   );
@@ -706,25 +707,41 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
       );
     }
 
-    return ListView.builder(
-      controller: _scrollController,
-      padding: const EdgeInsets.only(bottom: 120, top: 4),
-      itemCount: _posts.length + (_hasMore ? 1 : 0),
-      itemBuilder: (context, index) {
-        if (index == _posts.length) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 32),
-            child: Center(
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: context.primary,
-              ),
-            ),
-          );
-        }
-        return PostCard(doc: _posts[index]);
+    return RefreshIndicator(
+      onRefresh: () async {
+        await _fetchPosts(isFirstLoad: true);
       },
-      physics: const BouncingScrollPhysics(),
+      child: ListView.builder(
+        controller: _scrollController,
+        padding: const EdgeInsets.only(bottom: 120, top: 4),
+        itemCount: _posts.length + (_hasMore ? 1 : 0) + 1,
+        itemBuilder: (context, index) {
+          if (index == 0) {
+            return _buildStoriesBar();
+          }
+          final postIndex = index - 1;
+          if (postIndex == _posts.length) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 32),
+              child: Center(
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: context.primary,
+                ),
+              ),
+            );
+          }
+          return PostCard(
+            doc: _posts[postIndex],
+            onDeleted: () {
+              setState(() {
+                _posts.removeAt(postIndex);
+              });
+            },
+          );
+        },
+        physics: const BouncingScrollPhysics(),
+      ),
     );
   }
 

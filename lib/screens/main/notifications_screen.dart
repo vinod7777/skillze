@@ -5,8 +5,8 @@ import '../../widgets/user_avatar.dart';
 
 import '../../theme/app_theme.dart';
 import '../../services/localization_service.dart';
-
 import '../../services/push_notification_service.dart';
+import 'post_detail_screen.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -296,18 +296,31 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     // Show unread dot for new class requests
     final showUnreadDot = !isRead;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: context.surfaceColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: showUnreadDot
-              ? context.primary.withValues(alpha: 0.15)
-              : context.border,
+    return GestureDetector(
+      onTap: () async {
+        if (!isRead) {
+          await doc.reference.update({'isRead': true});
+        }
+        final postId = data['postId'] as String?;
+        if (postId != null && postId.isNotEmpty && context.mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => PostDetailScreen(postId: postId)),
+          );
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: context.surfaceColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: showUnreadDot
+                ? context.primary.withValues(alpha: 0.15)
+                : context.border,
+          ),
         ),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -448,6 +461,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             ),
           ],
         ],
+      ),
       ),
     );
   }

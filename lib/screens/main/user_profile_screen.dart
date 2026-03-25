@@ -866,7 +866,12 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                 Expanded(
                   child: SingleChildScrollView(
                     controller: scrollController,
-                    child: PostCard(doc: postDoc),
+                    child: PostCard(
+                      doc: postDoc,
+                      onDeleted: () {
+                        Navigator.pop(context);
+                      },
+                    ),
                   ),
                 ),
               ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -14,10 +15,18 @@ import 'user_avatar.dart';
 import '../services/notification_service.dart';
 import '../screens/main/comments_modal.dart';
 import '../services/deep_link_service.dart';
+import '../screens/main/post_detail_screen.dart';
 
 class PostCard extends StatefulWidget {
   final DocumentSnapshot doc;
-  const PostCard({super.key, required this.doc});
+  final bool isClickable;
+  final VoidCallback? onDeleted;
+  const PostCard({
+    super.key, 
+    required this.doc, 
+    this.isClickable = true,
+    this.onDeleted,
+  });
 
   @override
   State<PostCard> createState() => _PostCardState();
@@ -25,11 +34,15 @@ class PostCard extends StatefulWidget {
 
 class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin {
   bool _isLiked = false;
-  bool _isSaved = false;
   int _likesCount = 0;
   int _commentsCount = 0;
   bool _isFollowing = false;
   bool _isHidden = false;
+  String? _firstLikerName;
+  String? _topLikerId;
+  bool _isNavigating = false;
+  int _currentMediaIndex = 0;
+  bool _isExpanded = false;
 
   late AnimationController _heartController;
   late Animation<double> _heartScale;
@@ -74,7 +87,6 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
 
       final data = widget.doc.data() as Map<String, dynamic>?;
       final String authorId = data?['authorId'] ?? '';
-      final List savedBy = data?['savedBy'] ?? [];
 
       // Fetch current user data for following and hidden lists
       final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
@@ -89,11 +101,41 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
       if (mounted) {
         setState(() {
           _isLiked = likeDoc.exists;
-          _isSaved = savedBy.contains(user.uid);
           _isFollowing = following;
           _isHidden = hiddenPosts.contains(widget.doc.id) || 
                       notInterestedPosts.contains(widget.doc.id);
         });
+
+        // Fetch liker with highest followers for summary
+        if (_likesCount > 0) {
+          final likesSnapshot = await postRef.collection('likes')
+              .limit(5)
+              .get();
+          
+          String? bestLikerName;
+          String? bestLikerId;
+          int maxFollowers = -1;
+
+          for (var doc in likesSnapshot.docs) {
+            final uDoc = await FirebaseFirestore.instance.collection('users').doc(doc.id).get();
+            final uData = uDoc.data();
+            if (uData != null) {
+              final followers = (uData['followersList'] as List?)?.length ?? 0;
+              if (followers > maxFollowers) {
+                maxFollowers = followers;
+                bestLikerName = uData['name'];
+                bestLikerId = doc.id;
+              }
+            }
+          }
+
+          if (mounted) {
+            setState(() {
+              _firstLikerName = bestLikerName;
+              _topLikerId = bestLikerId;
+            });
+          }
+        }
       }
     }
   }
@@ -131,47 +173,6 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
     _heartController.forward(from: 0.0);
   }
 
-  Future<void> _toggleSave() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
-    final saveRef = FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .collection('savedPosts')
-        .doc(widget.doc.id);
-
-    final postRef = FirebaseFirestore.instance.collection('posts').doc(widget.doc.id);
-
-    setState(() {
-      _isSaved = !_isSaved;
-    });
-
-    if (_isSaved) {
-      // Update subcollection for user
-      await saveRef.set({
-        'postId': widget.doc.id,
-        'savedAt': FieldValue.serverTimestamp(),
-      });
-      // Update post document array for efficient querying
-      await postRef.update({
-        'savedBy': FieldValue.arrayUnion([user.uid])
-      });
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Post saved'), duration: Duration(seconds: 1)),
-        );
-      }
-    } else {
-      // Remove from subcollection
-      await saveRef.delete();
-      // Remove from post document array
-      await postRef.update({
-        'savedBy': FieldValue.arrayRemove([user.uid])
-      });
-    }
-  }
 
   Future<void> _handleShare() async {
     final data = widget.doc.data() as Map<String, dynamic>;
@@ -289,6 +290,51 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
         SnackBar(content: Text(notInterested ? 'Thanks. We\'ll show fewer posts like this.' : 'Post hidden.')),
       );
     }
+  }
+
+  void _showHideOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: context.surfaceLightColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: context.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            ListTile(
+              leading: Icon(Icons.visibility_off_outlined, color: context.textHigh),
+              title: Text('Hide', style: TextStyle(color: context.textHigh, fontWeight: FontWeight.w600)),
+              subtitle: Text('See fewer posts like this', style: TextStyle(color: context.textMed, fontSize: 13)),
+              onTap: () {
+                Navigator.pop(context);
+                _hidePost(false);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.sentiment_dissatisfied_outlined, color: context.textHigh),
+              title: Text('Not Interested', style: TextStyle(color: context.textHigh, fontWeight: FontWeight.w600)),
+              subtitle: Text('Don\'t show me posts related to this', style: TextStyle(color: context.textMed, fontSize: 13)),
+              onTap: () {
+                Navigator.pop(context);
+                _hidePost(true);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showMoreOptions(bool isCurrentUser) {
@@ -418,8 +464,12 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text(context.t('post_deleted_success'))),
                       );
-                      // Pop back to root and then push main to effectively 'reload' to Home screen
-                      Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil('/main', (route) => false);
+                      
+                      widget.onDeleted?.call();
+                      
+                      if (!widget.isClickable) {
+                        Navigator.pop(context, 'deleted');
+                      }
                     }
                   }
                 },
@@ -431,10 +481,47 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
     );
   }
 
+  void _showCommentsModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => CommentsModal(
+        postDoc: widget.doc,
+        onCommentPosted: () {
+          setState(() {
+            _commentsCount++;
+          });
+        },
+        onCommentDeleted: () {
+          setState(() {
+            _commentsCount--;
+          });
+        },
+      ),
+    );
+  }
+
+  Widget _buildActionButton(IconData icon, String label, Color color, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: 22),
+            const SizedBox(height: 4),
+            Text(label, style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w500)),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
-
     if (_isHidden) return const SizedBox.shrink();
 
     return StreamBuilder<DocumentSnapshot>(
@@ -447,377 +534,374 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
         final String authorName = data['authorName'] ?? 'Unknown';
         final String authorAvatar = data['authorAvatar'] ?? 
                                     data['authorProfileImageUrl'] ?? 
-                                    data['profileImageUrl'] ?? 
                                     data['photoUrl'] ?? '';
         final String content = data['content'] ?? '';
         final List<dynamic> mediaUrls = data['mediaUrls'] ?? [];
         final Timestamp? timestamp = data['timestamp'] as Timestamp?;
         final String timeAgo = timestamp != null ? timeago.format(timestamp.toDate()) : 'Recently';
         final bool isCurrentUser = authorId == currentUserId;
+        final bool isRepost = data['isRepost'] ?? false;
+        final String originalAuthorName = data['originalAuthorName'] ?? '';
 
-        // Update local counts from stream if possible
         _likesCount = data['likesCount'] ?? 0;
         _commentsCount = data['commentsCount'] ?? 0;
+        final bool isPrivate = data['isPrivate'] ?? false;
 
-        return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: context.surfaceColor,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: StreamBuilder<DocumentSnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('users')
-                  .doc(authorId)
-                  .snapshots(),
-              builder: (context, userSnap) {
-                final userData = userSnap.data?.data() as Map<String, dynamic>?;
-                final String displayAvatar = userData?['profileImageUrl'] ?? 
-                                           userData?['authorProfileImageUrl'] ??
-                                           userData?['photoUrl'] ??
-                                           userData?['authorAvatar'] ??
-                                           authorAvatar;
-                final String displayName = userData?['name'] ?? authorName;
+        return GestureDetector(
+          onTap: () async {
+            if (!widget.isClickable || _isNavigating) return;
+            setState(() => _isNavigating = true);
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => PostDetailScreen(postId: widget.doc.id)),
+            );
+            
+            if (result == 'deleted' && widget.onDeleted != null) {
+              widget.onDeleted?.call();
+            }
 
-                return Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        if (isCurrentUser) {
-                          final navState = context
-                              .findAncestorStateOfType<MainNavigationState>();
-                          if (navState != null) navState.setIndex(3);
-                        } else {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => 
-                                  UserProfileScreen(userId: authorId),
+            if (mounted) {
+              setState(() => _isNavigating = false);
+            }
+          },
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 8),
+          decoration: BoxDecoration(
+            color: context.surfaceColor,
+            border: Border(bottom: BorderSide(color: context.dividerColor, width: 0.5)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Header
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12.0, 12.0, 4.0, 8.0),
+                child: StreamBuilder<DocumentSnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(authorId)
+                      .snapshots(),
+                  builder: (context, userSnap) {
+                    final userData = userSnap.data?.data() as Map<String, dynamic>?;
+                    final String displayAvatar = userData?['profileImageUrl'] ?? 
+                                               userData?['photoUrl'] ??
+                                               authorAvatar;
+                    final String displayName = userData?['name'] ?? authorName;
+                    final String? topSkills = userData?['skills'] != null 
+                        ? (userData!['skills'] as List<dynamic>).take(3).join(' • ') 
+                        : null;
+
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            if (isCurrentUser) {
+                              final navState = context.findAncestorStateOfType<MainNavigationState>();
+                              if (navState != null) navState.setIndex(3);
+                            } else {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => UserProfileScreen(userId: authorId)),
+                              );
+                            }
+                          },
+                          child: UserAvatar(
+                            imageUrl: displayAvatar,
+                            name: displayName,
+                            radius: 22,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              GestureDetector(
+                                onTap: () {
+                                  if (isCurrentUser) {
+                                    final navState = context.findAncestorStateOfType<MainNavigationState>();
+                                    if (navState != null) navState.setIndex(3);
+                                  } else {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (context) => UserProfileScreen(userId: authorId)),
+                                    );
+                                  }
+                                },
+                                child: Text(
+                                  displayName,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 14.5,
+                                    color: context.textHigh,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (topSkills != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 1.0),
+                                  child: Text(
+                                    topSkills,
+                                    style: TextStyle(color: context.primary, fontSize: 10, fontWeight: FontWeight.w500),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              const SizedBox(height: 2),
+                              Row(
+                                children: [
+                                  Text(
+                                    timeAgo,
+                                    style: TextStyle(color: context.textMed, fontSize: 12),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Icon(isPrivate ? Icons.people_alt_outlined : Icons.public, size: 14, color: context.textMed),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => _showMoreOptions(isCurrentUser),
+                          icon: Icon(Icons.more_horiz, color: context.textMed),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        IconButton(
+                          onPressed: _showHideOptions,
+                          icon: Icon(Icons.close, color: context.textMed),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+              
+              if (isRepost)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
+                  child: Text(
+                    'reposted $originalAuthorName\'s post',
+                    style: TextStyle(color: context.textMed, fontSize: 12, fontStyle: FontStyle.italic),
+                  ),
+                ),
+
+              if (content.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12.0, 4.0, 12.0, 12.0),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final bool canExpand = content.length > 150;
+                      final bool shouldTruncate = !widget.isClickable ? false : (canExpand && !_isExpanded);
+                      
+                      if (shouldTruncate) {
+                        return RichText(
+                          text: TextSpan(
+                            style: TextStyle(color: context.textHigh, fontSize: 13.5, height: 1.4),
+                            children: [
+                              TextSpan(text: content.substring(0, 140)),
+                              TextSpan(
+                                text: '... See more',
+                                style: TextStyle(color: context.textMed, fontWeight: FontWeight.bold),
+                                recognizer: TapGestureRecognizer()..onTap = () {
+                                  setState(() => _isExpanded = true);
+                                },
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                      
+                      return Text(
+                        content,
+                        style: TextStyle(color: context.textHigh, fontSize: 13.5, height: 1.4),
+                      );
+                    },
+                  ),
+                ),
+
+              if (mediaUrls.isNotEmpty)
+                GestureDetector(
+                  onDoubleTap: _handleDoubleTap,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      CarouselSlider(
+                        options: CarouselOptions(
+                          aspectRatio: 1.0,
+                          viewportFraction: 1.0,
+                          enableInfiniteScroll: false,
+                          onPageChanged: (index, reason) {
+                            setState(() {
+                              _currentMediaIndex = index;
+                            });
+                          },
+                        ),
+                        items: mediaUrls.map((url) {
+                          final bool isValidUrl = url is String && url.trim().isNotEmpty && (url.startsWith('http://') || url.startsWith('https://'));
+                          if (!isValidUrl) {
+                            return Container(
+                              color: context.surfaceLightColor,
+                              child: Center(
+                                child: Icon(Icons.image_not_supported_outlined, color: context.textLow, size: 40),
+                              ),
+                            );
+                          }
+                          return Image.network(
+                            url, 
+                            fit: BoxFit.cover, 
+                            width: double.infinity,
+                            errorBuilder: (context, error, stackTrace) => Container(
+                              color: context.surfaceLightColor,
+                              child: Center(
+                                child: Icon(Icons.broken_image_outlined, color: context.textLow, size: 40),
+                              ),
                             ),
                           );
-                        }
-                      },
-                      child: UserAvatar(
-                        imageUrl: displayAvatar,
-                        name: displayName,
-                        radius: 20,
+                        }).toList(),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      if (mediaUrls.length > 1)
+                        Positioned(
+                          bottom: 15,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: mediaUrls.asMap().entries.map((entry) {
+                              return Container(
+                                width: 6.0,
+                                height: 6.0,
+                                margin: const EdgeInsets.symmetric(horizontal: 3.0),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white.withOpacity(
+                                    _currentMediaIndex == entry.key ? 0.9 : 0.4,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.2),
+                                      blurRadius: 4,
+                                      spreadRadius: 1,
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      AnimatedBuilder(
+                        animation: _heartController,
+                        builder: (context, child) {
+                          return Opacity(
+                            opacity: _heartOpacity.value,
+                            child: Transform.scale(
+                              scale: _heartScale.value,
+                              child: const Icon(
+                                Icons.favorite_rounded,
+                                color: Colors.white,
+                                size: 100,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 12.0),
+                child: Row(
+                  children: [
+                    if (_likesCount > 0) ...[
+                      Row(
                         children: [
+                          Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
+                            child: const Icon(Icons.thumb_up_alt, size: 10, color: Colors.white),
+                          ),
+                          const SizedBox(width: 6),
                           GestureDetector(
                             onTap: () {
-                              if (isCurrentUser) {
-                                final navState = context
-                                    .findAncestorStateOfType<MainNavigationState>();
-                                if (navState != null) navState.setIndex(3);
-                              } else {
+                              if (_topLikerId != null) {
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(
-                                    builder: (context) => 
-                                        UserProfileScreen(userId: authorId),
-                                  ),
+                                  MaterialPageRoute(builder: (context) => UserProfileScreen(userId: _topLikerId!)),
                                 );
                               }
                             },
                             child: Text(
-                              displayName,
+                              _firstLikerName != null 
+                                ? (_likesCount > 1 
+                                    ? "$_firstLikerName and ${_likesCount - 1} others" 
+                                    : "$_firstLikerName")
+                                : '$_likesCount',
                               style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 16,
-                                color: context.textHigh,
+                                color: context.textMed, 
+                                fontSize: 13,
+                                fontWeight: _firstLikerName != null ? FontWeight.w600 : FontWeight.normal,
                               ),
                             ),
                           ),
-                          Row(
-                            children: [
-                              Text(
-                                timeAgo,
-                                style: TextStyle(
-                                  color: context.textMed,
-                                  fontSize: 12,
-                                ),
-                              ),
-                              if (data['location'] != null) ...[
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                                  child: Text(
-                                    '•',
-                                    style: TextStyle(
-                                      color: context.textMed,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                                Text(
-                                  data['location'],
-                                  style: TextStyle(
-                                    color: context.textMed,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
                         ],
                       ),
-                    ),
-                    IconButton(
-                      onPressed: () => _showMoreOptions(isCurrentUser),
-                      icon: Icon(Icons.more_horiz, color: context.textHigh),
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
-          // Media
-          if (mediaUrls.isNotEmpty)
-            GestureDetector(
-              onDoubleTap: _handleDoubleTap,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  CarouselSlider(
-                    options: CarouselOptions(
-                      height: 400,
-                      viewportFraction: 1.0,
-                      enableInfiniteScroll: false,
-                    ),
-                    items: mediaUrls.map((url) {
-                      final bool isValidUrl = url is String && url.trim().isNotEmpty && (url.startsWith('http://') || url.startsWith('https://'));
-                      if (!isValidUrl) {
-                        return Container(
-                          color: const Color(0xFFF1F5F9),
-                          child: const Center(
-                            child: Icon(Icons.image_not_supported_outlined, color: Color(0xFFA1A1AA), size: 40),
-                          ),
-                        );
-                      }
-                      return Image.network(
-                        url, 
-                        fit: BoxFit.cover, 
-                        width: double.infinity,
-                        errorBuilder: (context, error, stackTrace) => Container(
-                          color: const Color(0xFFF1F5F9),
-                          child: const Center(
-                            child: Icon(Icons.broken_image_outlined, color: Color(0xFFA1A1AA), size: 40),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  AnimatedBuilder(
-                    animation: _heartController,
-                    builder: (context, child) {
-                      return Opacity(
-                        opacity: _heartOpacity.value,
-                        child: Transform.scale(
-                          scale: _heartScale.value,
-                          child: const Icon(
-                            Icons.favorite_rounded,
-                            color: Colors.white,
-                            size: 100,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-
-          // Actions Row
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-            child: Row(
-              children: [
-                GestureDetector(
-                  onTap: _toggleLike,
-                  child: Icon(
-                    _isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                    color: _isLiked ? Colors.red : context.primary,
-                    size: 28,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                GestureDetector(
-                  onTap: () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (context) => CommentsModal(
-                        postDoc: widget.doc,
-                        onCommentPosted: () {
-                          setState(() {
-                            _commentsCount++;
-                          });
-                        },
-                        onCommentDeleted: () {
-                          setState(() {
-                            _commentsCount--;
-                          });
-                        },
-                      ),
-                    );
-                  },
-                  child: Row(
-                    children: [
-                      Icon(Icons.chat_bubble_outline_rounded, size: 26, color: context.primary),
-                      if (_commentsCount > 0) ...[
-                        const SizedBox(width: 4),
-                        Text('$_commentsCount', style: TextStyle(color: context.primary, fontWeight: FontWeight.w600)),
-                      ],
                     ],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                GestureDetector(
-                  onTap: _handleShare,
-                  child: Icon(Icons.share_outlined, size: 26, color: context.primary),
-                ),
-                const Spacer(),
-                GestureDetector(
-                  onTap: _toggleSave,
-                  child: Icon(
-                    _isSaved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
-                    size: 28,
-                    color: context.primary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Likes Count
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0),
-            child: Text(
-              '${_likesCount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')} likes',
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 15,
-                color: context.primary,
-              ),
-            ),
-          ),
-
-          // Content / Caption
-          if (content.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12.0, 8.0, 12.0, 16.0),
-              child: RichText(
-                text: TextSpan(
-                  style: TextStyle(color: context.textHigh, fontSize: 15, height: 1.3),
-                  children: [
-                    TextSpan(
-                      text: '$authorName ',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        color: context.primary,
+                    const Spacer(),
+                    if (_commentsCount > 0)
+                      Text(
+                        '$_commentsCount ${_commentsCount == 1 ? 'comment' : 'comments'}',
+                        style: TextStyle(color: context.textMed, fontSize: 13),
                       ),
-                    ),
-                    TextSpan(
-                      text: content,
-                      style: TextStyle(color: context.textMed),
-                    ),
                   ],
                 ),
               ),
-            ),
 
-          // Skills/Roles Tags
-          if (data['skills'] != null || data['roles'] != null)
-            Padding(
-              padding: const EdgeInsets.only(left: 12.0, right: 12.0, bottom: 16.0),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                   ...((data['skills'] as List? ?? []).map((s) => _buildTag(s.toString()))),
-                   ...((data['roles'] as List? ?? []).map((r) => _buildTag(r.toString()))),
-                ],
-              ),
-            ),
-
-          if (data['rules'] != null && (data['rules'] as String).isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(left: 12.0, right: 12.0, bottom: 16.0),
-              child: Container(
-                padding: const EdgeInsets.all(12),
+              Container(
                 decoration: BoxDecoration(
-                  color: context.primary.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: context.primary.withOpacity(0.1)),
+                  border: Border(
+                    top: BorderSide(color: context.dividerColor, width: 0.5),
+                  ),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    Row(
-                      children: [
-                        Icon(Icons.gavel_rounded, size: 14, color: context.primary),
-                        const SizedBox(width: 8),
-                        Text(
-                          'RULES',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            color: context.primary,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ],
+                    _buildActionButton(
+                      _isLiked ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined,
+                      "Like",
+                      _isLiked ? Colors.blue : context.textMed,
+                      _toggleLike,
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      data['rules'],
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: context.textMed,
-                        height: 1.4,
-                      ),
+                    _buildActionButton(
+                      Icons.comment_outlined,
+                      "Comment",
+                      context.textMed,
+                      _showCommentsModal,
+                    ),
+                    _buildActionButton(
+                      Icons.repeat_rounded,
+                      "Repost",
+                      context.textMed,
+                      _repost,
+                    ),
+                    _buildActionButton(
+                      Icons.send_outlined,
+                      "Send",
+                      context.textMed,
+                      _handleShare,
                     ),
                   ],
                 ),
               ),
-            ),
-
-          Divider(height: 1, color: context.dividerColor),
-        ],
-      ),
-    );
+            ],
+          ),
+          ),
+        );
       },
     );
   }
 
-  Widget _buildTag(String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: context.surfaceLightColor,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: context.border),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: context.isDark ? context.accent : context.primary,
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
 }
 
 

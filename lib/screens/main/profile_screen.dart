@@ -476,7 +476,12 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   Expanded(
                     child: SingleChildScrollView(
                       controller: scrollController,
-                      child: PostCard(doc: postDoc),
+                      child: PostCard(
+                        doc: postDoc,
+                        onDeleted: () {
+                          Navigator.pop(context);
+                        },
+                      ),
                     ),
                   ),
                 ],

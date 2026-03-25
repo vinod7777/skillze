@@ -13,7 +13,6 @@ import 'custom_camera_screen.dart';
 import 'dart:io' as io;
 import 'package:flutter/foundation.dart' show kIsWeb;
 
-import 'call_screen.dart';
 import '../../services/profanity_filter_service.dart';
 import '../../utils/profanity_helper.dart';
 import '../../utils/mention_helper.dart';
@@ -65,64 +64,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
     return _getOtherUserProfileFuture!;
   }
 
-  Future<void> _startWebRTCCall(bool isVideo) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
 
-    if (widget.otherUserId == user.uid) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('You cannot call yourself')),
-      );
-      return;
-    }
-
-    final callId = FirebaseFirestore.instance.collection('calls').doc().id;
-    final myName =
-        (await FirebaseFirestore.instance
-                .collection('users')
-                .doc(user.uid)
-                .get())
-            .data()?['name'] ??
-        'Someone';
-
-    if (mounted) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => CallScreen(
-            callId: callId,
-            otherUserId: widget.otherUserId,
-            otherUserName: widget.otherUserName,
-            chatId: widget.chatId,
-            isVideo: isVideo,
-            isReceiver: false,
-          ),
-        ),
-      );
-    }
-
-    final otherUserDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(widget.otherUserId)
-        .get();
-    final otherUserToken = otherUserDoc.data()?['fcmToken'];
-    final mutedUsers = List<String>.from(otherUserDoc.data()?['mutedUsers'] ?? []);
-    final restrictedUsers = List<String>.from(otherUserDoc.data()?['restrictedUsers'] ?? []);
-    if (otherUserToken != null && !mutedUsers.contains(user.uid) && !restrictedUsers.contains(user.uid)) {
-      await PushNotificationService.sendNotification(
-        recipientToken: otherUserToken,
-        title: "Incoming Call",
-        body: "$myName is calling...",
-        extraData: {
-          'type': 'call',
-          'callId': callId,
-          'callerName': myName,
-          'callerId': user.uid,
-          'isVideo': isVideo.toString(),
-        },
-      );
-    }
-  }
 
   Future<void> _sendImage() async {
     if (_iBlockedOther || _otherBlockedMe) return;
@@ -470,6 +412,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
     }
   }
 
+
   @override
   void dispose() {
     _messageController.dispose();
@@ -679,18 +622,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
           ),
         ),
         actions: [
-          _buildCallButton(
-            Icons.call_rounded,
-            'Audio Call',
-            () => _startWebRTCCall(false),
-          ),
-          const SizedBox(width: 6),
-          _buildCallButton(
-            Icons.videocam_rounded,
-            'Video Call',
-            () => _startWebRTCCall(true),
-          ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
         ],
       ),
       body: SafeArea(
@@ -755,15 +687,6 @@ class _ConversationScreenState extends State<ConversationScreen> {
                         final dt = timestamp.toDate();
                         timeLabel =
                             '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-                      }
-
-                      // â”€â”€ Call log message â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-                      if (msgData['type'] == 'call') {
-                        return _buildCallBubble(
-                          msgData: msgData,
-                          isMe: isMe,
-                          timeLabel: timeLabel,
-                        );
                       }
 
                       final text = msgData['text'] ?? '';
@@ -1320,101 +1243,5 @@ class _ConversationScreenState extends State<ConversationScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text('Error: $e')));
     }
-  }
-
-  // â”€â”€ Call log bubble â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-  Widget _buildCallButton(IconData icon, String tooltip, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 38,
-        height: 38,
-        decoration: BoxDecoration(
-          color: context.primary.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Icon(icon, color: context.primary, size: 20),
-      ),
-    );
-  }
-
-  Widget _buildCallBubble({
-    required Map<String, dynamic> msgData,
-    required bool isMe,
-    required String timeLabel,
-  }) {
-    final callStatus = msgData['callStatus'] as String? ?? 'missed';
-    final duration = msgData['callDuration'] as int? ?? 0;
-
-    final isAnswered = callStatus == 'answered';
-    final isMissed = callStatus == 'missed';
-    final isVideo = msgData['isVideo'] ?? false;
-
-    // Icon & colour
-    final IconData icon;
-    final Color iconColor;
-    final String label;
-    final typeStr = isVideo ? 'Video call' : 'Audio call';
-
-    if (isAnswered) {
-      icon = isVideo ? Icons.videocam_rounded : Icons.call_rounded;
-      iconColor = Colors.greenAccent;
-      final m = (duration ~/ 60).toString().padLeft(2, '0');
-      final s = (duration % 60).toString().padLeft(2, '0');
-      label = '$typeStr Â· $m:$s';
-    } else if (isMissed) {
-      icon = isVideo ? Icons.videocam_off_rounded : Icons.call_missed_rounded;
-      iconColor = Colors.redAccent;
-      label = isMe ? 'No answer' : 'Missed $typeStr';
-    } else {
-      // rejected
-      icon = Icons.call_end_rounded;
-      iconColor = Colors.orangeAccent;
-      label = isMe ? 'Call declined' : 'Declined $typeStr';
-    }
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: Center(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          decoration: BoxDecoration(
-            color: context.surfaceLightColor.withValues(alpha: 0.7),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: context.border, width: 1),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, color: iconColor, size: 20),
-              const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                    Text(
-                      label,
-                      style: TextStyle(
-                        color: context.textHigh,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                    ),
-                  const SizedBox(height: 2),
-                  Text(
-                    timeLabel,
-                    style: TextStyle(
-                      color: context.textLow,
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }

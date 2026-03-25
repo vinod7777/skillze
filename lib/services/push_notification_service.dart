@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../screens/main/conversation_screen.dart';
-import '../screens/main/call_screen.dart';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -16,9 +16,6 @@ import 'package:googleapis_auth/auth_io.dart';
 
 import 'package:flutter/foundation.dart'
     show kIsWeb, defaultTargetPlatform, TargetPlatform;
-import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
-import 'package:flutter_callkit_incoming/entities/entities.dart';
-import 'callkit_service.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -66,22 +63,12 @@ class PushNotificationService {
         playSound: true,
       );
 
-      const AndroidNotificationChannel callChannel = AndroidNotificationChannel(
-        'feed_native_calls',
-        'Incoming Calls',
-        description: 'Used for incoming video and audio calls',
-        importance: Importance.max,
-        playSound: true,
-        enableVibration: true,
-      );
-
       final androidPlugin = _localNotifications
           .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin
           >();
 
       await androidPlugin?.createNotificationChannel(channel);
-      await androidPlugin?.createNotificationChannel(callChannel);
     }
 
     // 3. Handle Notification Clicks
@@ -102,20 +89,8 @@ class PushNotificationService {
       // Check if notifications are enabled before showing anything
       if (!(await areNotificationsEnabled())) return;
 
-      if (message.data['type'] == 'call') {
-        final callerId = message.data['callerId'];
-        final currentUserId = FirebaseAuth.instance.currentUser?.uid;
-        
-        // Don't show incoming call UI if it's our own call (sometimes happens with topic sync/multi-device)
-        if (callerId != null && callerId == currentUserId) return;
-
-        CallKitService.showCallNotification(
-          callerId: callerId ?? '',
-          callerName: message.data['callerName'] ?? 'Unknown',
-          callId: message.data['callId'] ?? '',
-          isVideo: message.data['isVideo'] == 'true',
-        );
-      } else if (message.notification != null) {
+      // Handle foreground notifications
+      if (message.notification != null) {
         _showLocalNotification(message);
       }
     });
@@ -177,30 +152,12 @@ class PushNotificationService {
             ),
           ),
         );
-      } else if (data['type'] == 'call') {
-        final currentUserId = FirebaseAuth.instance.currentUser?.uid;
-        final callerId = data['callerId'];
-        if (callerId != null && callerId == currentUserId) {
-          debugPrint('Attempted to call self via notification click. Ignoring.');
-          return;
-        }
-        navigatorKey.currentState?.push(
-          MaterialPageRoute(
-            builder: (_) => CallScreen(
-              callId: data['callId'],
-              otherUserId: data['callerId'],
-              otherUserName: data['callerName'] ?? 'Unknown',
-              isVideo: data['isVideo'] == 'true',
-              isReceiver: true,
-              autoAnswer: false, // User just tapped notification, didn't press 'Accept' button
-            ),
-          ),
-        );
       }
     } catch (e) {
       debugPrint('Notification handle error: $e');
     }
   }
+
 
   static Future<String> _getAccessToken() async {
     if (kIsWeb) return "";
@@ -241,15 +198,11 @@ class PushNotificationService {
         body: jsonEncode({
           'message': {
             'token': recipientToken,
-            'notification': (extraData?['type'] == 'call')
-                ? null
-                : {'title': title, 'body': body},
+            'notification': {'title': title, 'body': body},
             'data': extraData ?? {},
             'android': {
               'priority': 'high',
-              'notification': (extraData?['type'] == 'call')
-                  ? null
-                  : {'channel_id': 'feed_native_high', 'sound': 'default'},
+              'notification': {'channel_id': 'feed_native_high', 'sound': 'default'},
             },
           },
         }),
@@ -263,8 +216,6 @@ class PushNotificationService {
     if (!kIsWeb) {
       await [
         Permission.notification,
-        Permission.camera,
-        Permission.microphone,
       ].request();
     }
   }
@@ -310,63 +261,5 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // Show CallKit incoming call UI when a call arrives in background
-  if (message.data['type'] == 'call') {
-    await FlutterCallkitIncoming.showCallkitIncoming(
-      CallKitParams(
-        id: message.data['callId'] ?? '',
-        nameCaller: message.data['callerName'] ?? 'Unknown',
-        appName: 'Feed Native',
-        handle: message.data['isVideo'] == 'true' ? 'Video Call' : 'Audio Call',
-        type: message.data['isVideo'] == 'true' ? 1 : 0,
-        duration: 30000,
-        textAccept: 'Accept',
-        textDecline: 'Decline',
-        missedCallNotification: const NotificationParams(
-          showNotification: true,
-          isShowCallback: true,
-          subtitle: 'Missed call',
-          callbackText: 'Call back',
-        ),
-        extra: <String, dynamic>{
-          'callId': message.data['callId'] ?? '',
-          'callerId': message.data['callerId'] ?? '',
-          'callerName': message.data['callerName'] ?? 'Unknown',
-          'isVideo': message.data['isVideo'] ?? 'false',
-        },
-        android: const AndroidParams(
-          isCustomNotification: true,
-          isShowLogo: false,
-          ringtonePath: 'system_ringtone_default',
-          backgroundColor: '#0955fa',
-          actionColor: '#4CAF50',
-          textColor: '#ffffff',
-          isShowFullLockedScreen: true,
-        ),
-        ios: const IOSParams(
-          iconName: 'CallKitLogo',
-          handleType: 'generic',
-          supportsVideo: true,
-          maximumCallGroups: 2,
-          maximumCallsPerCallGroup: 1,
-          audioSessionMode: 'default',
-          audioSessionActive: true,
-          audioSessionPreferredSampleRate: 44100.0,
-          audioSessionPreferredIOBufferDuration: 0.005,
-          supportsDTMF: true,
-          supportsHolding: true,
-          supportsGrouping: false,
-          supportsUngrouping: false,
-          ringtonePath: 'system_ringtone_default',
-        ),
-      ),
-    );
-  } else if (message.data['type'] == 'chat') {
-    // For killed apps, if payload doesn't have 'notification', the data-only push won't show a notification
-    // unless manually shown here. But typically we send both. 
-    // This is a safety fallback.
-    if (message.notification == null) {
-      // Manual local notification if needed
-    }
-  }
+  // Background handler — no call handling needed
 }

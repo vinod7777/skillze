@@ -149,6 +149,45 @@ class _CommentsModalState extends State<CommentsModal> {
     super.dispose();
   }
 
+  Future<void> _notifyFollowers(String currentUserId, String currentUserName, String postId) async {
+    try {
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(currentUserId).get();
+      if (!userDoc.exists) return;
+      
+      final followers = List<String>.from(userDoc.data()?['followersList'] ?? []);
+      if (followers.isEmpty) return;
+      
+      final postAuthorId = _getPostAuthorId();
+      final batch = FirebaseFirestore.instance.batch();
+      final notificationsRef = FirebaseFirestore.instance.collection('notifications');
+      
+      int count = 0;
+      for (final followerId in followers) {
+        if (count >= 500) break; // Firestore batch limit
+        if (followerId == postAuthorId) continue; // Skip post creator (notified separately)
+        
+        final docRef = notificationsRef.doc();
+        batch.set(docRef, {
+          'targetUserId': followerId,
+          'actorId': currentUserId,
+          'actorName': currentUserName,
+          'type': 'followed_user_comment',
+          'message': 'commented on a post you might like',
+          'postId': postId,
+          'timestamp': FieldValue.serverTimestamp(),
+          'isRead': false,
+        });
+        count++;
+      }
+      
+      if (count > 0) {
+        await batch.commit();
+      }
+    } catch (e) {
+      debugPrint("Error notifying followers: $e");
+    }
+  }
+
   String _getPostAuthorId() {
     final data = widget.postDoc.data() as Map<String, dynamic>? ?? {};
     return data['authorId'] ?? '';
@@ -236,6 +275,9 @@ class _CommentsModalState extends State<CommentsModal> {
           postId: widget.postDoc.id,
           commentId: _replyToCommentId,
         );
+        
+        // Notify followers invisibly in background
+        _notifyFollowers(user.uid, userName, widget.postDoc.id);
       } else {
         // Posting a top-level comment
         await widget.postDoc.reference.collection('comments').add({
@@ -275,6 +317,9 @@ class _CommentsModalState extends State<CommentsModal> {
           notificationMessage: 'mentioned you in a comment',
           postId: widget.postDoc.id,
         );
+        
+        // Notify followers invisibly in background
+        _notifyFollowers(user.uid, userName, widget.postDoc.id);
       }
 
       _commentController.clear();
