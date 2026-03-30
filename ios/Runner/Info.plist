@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Feed Flutter</string>
+	<string>Skillze</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -13,7 +13,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>feed_flutter</string>
+	<string>skillze</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -46,9 +46,20 @@
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>Feed Native needs camera access to capture photos and videos</string>
+	<string>Skillze needs camera access to capture photos and videos</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Feed Native needs microphone access to record videos</string>
+	<string>Skillze needs microphone access to record videos</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Skillze needs photo library access to upload profile pictures and post images</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Skillze needs your location to help you find local skills and opportunities</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>https</string>
+		<string>http</string>
+		<string>mailto</string>
+		<string>tel</string>
+	</array>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>

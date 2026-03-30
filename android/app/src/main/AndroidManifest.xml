@@ -14,7 +14,7 @@
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <application
-        android:label="feed_flutter"
+        android:label="Skillze"
         android:name="${applicationName}"
         android:enableOnBackInvokedCallback="true"
         android:icon="@mipmap/launcher_icon">
@@ -39,13 +39,25 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
             <!-- Deep Linking -->
-            <intent-filter android:autoVerify="true">
+            <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="skillze" android:host="post" />
             </intent-filter>
+
+            <!-- HTTPS Deep Link Support -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="skillze.app" android:pathPrefix="/post/" />
+                <data android:scheme="http" android:host="skillze.app" android:pathPrefix="/post/" />
+            </intent-filter>
         </activity>
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="skillze_high_priority" />
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />

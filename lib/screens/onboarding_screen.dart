@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'welcome_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -111,7 +112,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     backgroundColor: const Color(0xFF0F2F6A),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     elevation: 0,
                   ),
@@ -163,16 +164,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               fit: BoxFit.contain,
             ),
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 20),
           // Title
           Text(
             page.title,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w800,
-              color: Color(0xFF1B3A5C),
-              height: 1.2,
+            style: GoogleFonts.outfit(
+              fontSize: 38,
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFF1B3A5C),
+           
             ),
           ),
           const SizedBox(height: 16),

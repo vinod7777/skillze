@@ -53,7 +53,6 @@ class PostDetailScreen extends StatelessWidget {
                   child: Column(
                     children: [
                       PostCard(doc: postDoc, isClickable: false),
-                      const Divider(),
                       // Inline comments list part
                       SizedBox(
                         height: MediaQuery.of(context).size.height * 0.6,

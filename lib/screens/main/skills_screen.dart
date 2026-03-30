@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/profanity_filter_service.dart';
 import '../../utils/profanity_helper.dart';
 import '../../theme/app_theme.dart';
-
+import '../onboarding/skill_selection_screen.dart';
 class SkillsScreen extends StatefulWidget {
   const SkillsScreen({super.key});
 
@@ -16,7 +16,7 @@ class _SkillsScreenState extends State<SkillsScreen> {
   List<Map<String, dynamic>> _skills = [];
   bool _isLoading = true;
   final TextEditingController _searchController = TextEditingController();
-  String _currentStatus = "Software Developer";
+  String _currentStatus = "";
 
   @override
   void initState() {
@@ -48,7 +48,7 @@ class _SkillsScreenState extends State<SkillsScreen> {
           final List<dynamic> legacySkills = doc.data()?['skills'] ?? [];
           _skills = legacySkills.map((s) => {'name': s.toString(), 'level': 'Intermediate'}).toList();
         }
-        _currentStatus = doc.data()?['status'] ?? "Software Developer";
+        _currentStatus = doc.data()?['status'] ?? "";
       }
     } catch (e) {
       debugPrint("Error fetching skills: $e");
@@ -128,205 +128,179 @@ class _SkillsScreenState extends State<SkillsScreen> {
     return Scaffold(
       backgroundColor: context.bg,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: context.bg,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_rounded, color: context.textHigh),
+          icon: Icon(Icons.close_rounded, color: context.textHigh),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Manage Your Skills',
+          'Manage Skills',
           style: TextStyle(
             color: context.textHigh,
             fontWeight: FontWeight.bold,
-            fontSize: 22,
+            fontSize: 18,
           ),
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: TextButton(
+              onPressed: _saveSkills,
+              style: TextButton.styleFrom(
+                foregroundColor: context.primary,
+                textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              child: const Text('Save'),
+            ),
+          ),
+        ],
       ),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 12),
-                // Search Bar
-                Container(
-                  decoration: BoxDecoration(
-                    color: context.surfaceColor,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: context.border),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.02),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
+      body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Standardized Search Input
+                  Container(
+                    decoration: BoxDecoration(
+                      color: context.surfaceColor,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: context.border, width: 1.5),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: (value) => setState(() {}),
+                      onSubmitted: _addNewSkill,
+                      style: TextStyle(color: context.textHigh),
+                      decoration: InputDecoration(
+                        hintText: 'Search or add your own skill...',
+                        hintStyle: TextStyle(color: context.textLow),
+                        prefixIcon: Icon(Icons.search_rounded, color: context.primary),
+                        suffixIcon: _searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon: Icon(Icons.add_circle_rounded, color: context.primary),
+                                onPressed: () => _addNewSkill(_searchController.text),
+                                tooltip: 'Add custom skill',
+                              )
+                            : null,
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        disabledBorder: InputBorder.none,
+                        filled: false,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                       ),
-                    ],
-                  ),
-                  child: TextField(
-                    controller: _searchController,
-                    onSubmitted: _addNewSkill,
-                    decoration: InputDecoration(
-                      hintText: 'Search for skills (e.g. Design, Coding)',
-                      hintStyle: TextStyle(color: context.textLow, fontSize: 16),
-                      prefixIcon: Icon(Icons.search_rounded, color: context.textLow),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 16),
                     ),
                   ),
-                ),
-                const SizedBox(height: 24),
-
-                // Current Status section
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: context.surfaceColor,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: context.border),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
+                  
+                  const SizedBox(height: 28),
+                  
+                  // Status Input Card
+                  GestureDetector(
+                    onTap: _showEditStatusDialog,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: context.surfaceColor,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: context.border, width: 1.2),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.business_center_rounded, color: context.primary, size: 20),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Icon(Icons.work_outline_rounded, size: 16, color: context.primary),
-                                const SizedBox(width: 8),
                                 Text(
-                                  'CURRENT STATUS',
+                                  _currentStatus.isEmpty ? 'Set Professional Status' : _currentStatus,
                                   style: TextStyle(
-                                    color: context.primary.withValues(alpha: 0.8),
-                                    fontSize: 12,
+                                    color: _currentStatus.isEmpty ? context.textLow : context.textHigh,
+                                    fontSize: 15,
                                     fontWeight: FontWeight.bold,
-                                    letterSpacing: 0.5,
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 12),
-                            Text(
-                              _currentStatus,
-                              style: TextStyle(
-                                color: context.textHigh,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
+                          ),
+                          Icon(Icons.edit_note_rounded, color: context.textLow, size: 20),
+                        ],
+                      ),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 32),
+                  
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Your Skills',
+                        style: TextStyle(
+                          color: context.textHigh,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      IconButton(
-                        onPressed: () {
-                          // Show edit status dialog
-                          _showEditStatusDialog();
-                        },
-                        icon: Icon(Icons.edit_note_rounded, color: context.textHigh),
+                      Text(
+                        '${_skills.length} Total',
+                        style: TextStyle(
+                          color: context.textLow,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 32),
-
-                // Selected Skills Header
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Selected Skills',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: context.primary,
-                      ),
-                    ),
-                    Text(
-                      '${_skills.length} SKILLS',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: context.textLow,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Skills List
-                ListView.separated(
-                  physics: const NeverScrollableScrollPhysics(),
-                  shrinkWrap: true,
-                  itemCount: _skills.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final skill = _skills[index];
-                    return _buildSkillCard(index, skill['name'], skill['level']);
-                  },
-                ),
-
-                const SizedBox(height: 16),
-                // Add Another Skill Dashed Button
-                GestureDetector(
-                  onTap: () => _focusSearch(),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 20),
-                    decoration: BoxDecoration(
-                      color: context.surfaceColor.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: context.border,
-                        style: BorderStyle.solid,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.add_circle_outline_rounded, color: context.textLow),
-                        const SizedBox(width: 10),
-                        Text(
-                          'Add another skill',
-                          style: TextStyle(
-                            color: context.textLow,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 120), // Spacing for sticky button
-              ],
+                  const SizedBox(height: 12),
+                ],
+              ),
             ),
           ),
-
-          // Sticky Save Button
-          Positioned(
-            left: 24,
-            right: 24,
-            bottom: 30,
-            child: SizedBox(
-              height: 60,
-              child: ElevatedButton(
-                onPressed: _saveSkills,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: context.primary,
-                  foregroundColor: context.onPrimary,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  elevation: 8,
-                  shadowColor: context.primary.withValues(alpha: 0.3),
-                ),
-                child: const Text(
-                  'Save Skills',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+          
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final skill = _skills[index];
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _buildSkillCard(index, skill['name'], skill['level']),
+                  );
+                },
+                childCount: _skills.length,
+              ),
+            ),
+          ),
+          
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+              child: Opacity(
+                opacity: 0.8,
+                child: TextButton.icon(
+                  onPressed: _navigateToSkillSelection,
+                  icon: const Icon(Icons.add_rounded, size: 18),
+                  label: const Text('Add Skills'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: context.primary,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                 ),
               ),
@@ -338,52 +312,41 @@ class _SkillsScreenState extends State<SkillsScreen> {
   }
 
   Widget _buildSkillCard(int index, String name, String level) {
-    IconData skillIcon = Icons.code_rounded;
-    if (name.toLowerCase().contains('photo')) skillIcon = Icons.camera_alt_rounded;
-    if (name.toLowerCase().contains('design')) skillIcon = Icons.brush_rounded;
-
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: context.surfaceColor,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: context.border),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: context.border, width: 1),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: context.surfaceLightColor,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(skillIcon, size: 20, color: context.primary),
-              ),
-              const SizedBox(width: 16),
-              Text(
-                name,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: context.textHigh,
+              Expanded(
+                child: Text(
+                  name,
+                  style: TextStyle(
+                    color: context.textHigh,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
                 ),
               ),
-              const Spacer(),
-              IconButton(
-                onPressed: () => _removeSkill(index),
-                icon: Icon(Icons.close_rounded, color: context.textLow),
+              GestureDetector(
+                onTap: () => _removeSkill(index),
+                child: Icon(Icons.close_rounded, color: context.textLow, size: 18),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          // Level Switcher
+          const SizedBox(height: 10),
           Container(
-            height: 44,
+            height: 34,
+            padding: const EdgeInsets.all(2),
             decoration: BoxDecoration(
-              color: context.surfaceLightColor,
-              borderRadius: BorderRadius.circular(12),
+              color: context.bg,
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
               children: [
@@ -402,19 +365,19 @@ class _SkillsScreenState extends State<SkillsScreen> {
     return Expanded(
       child: GestureDetector(
         onTap: () => _updateLevel(skillIndex, label),
-        child: Container(
-          margin: const EdgeInsets.all(4),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
           decoration: BoxDecoration(
             color: isSelected ? context.primary : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(8),
           ),
           alignment: Alignment.center,
           child: Text(
             label,
             style: TextStyle(
-              fontSize: 13,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-              color: isSelected ? context.onPrimary : context.textLow,
+              fontSize: 11,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+              color: isSelected ? Colors.white : context.textMed.withOpacity(0.7),
             ),
           ),
         ),
@@ -422,30 +385,102 @@ class _SkillsScreenState extends State<SkillsScreen> {
     );
   }
 
-  void _focusSearch() {
-    FocusScope.of(context).requestFocus(FocusNode()); // Just for example, ideally focus search bar
+  void _navigateToSkillSelection() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SkillSelectionScreen(
+          isEditMode: true,
+          initialSelectedSkills: _skills.map((s) => s['name'] as String).toList(),
+        ),
+      ),
+    ).then((_) => _fetchSkills());
   }
 
   void _showEditStatusDialog() {
     final controller = TextEditingController(text: _currentStatus);
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Main Skill/Status'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(hintText: 'e.g. Fullstack Developer'),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text('Cancel', style: TextStyle(color: context.textLow))),
-          TextButton(
-            onPressed: () {
-              setState(() => _currentStatus = controller.text);
-              Navigator.pop(context);
-            },
-            child: Text('Update', style: TextStyle(color: context.primary, fontWeight: FontWeight.bold)),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: Container(
+          decoration: BoxDecoration(
+            color: context.surfaceColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
           ),
-        ],
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: context.border,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Professional Status',
+                style: TextStyle(
+                  color: context.textHigh,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Define your role or current focus briefly.',
+                style: TextStyle(color: context.textMed.withOpacity(0.7), fontSize: 14),
+              ),
+              const SizedBox(height: 24),
+              TextField(
+                controller: controller,
+                autofocus: true,
+                style: TextStyle(color: context.textHigh, fontWeight: FontWeight.w600),
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: context.surfaceLightColor,
+                  hintText: 'e.g. Fullstack Developer, Product Designer',
+                  hintStyle: TextStyle(color: context.textMed.withOpacity(0.4)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: context.primary, width: 2),
+                  ),
+                  contentPadding: const EdgeInsets.all(20),
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: () {
+                    setState(() => _currentStatus = controller.text);
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: context.primary,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    elevation: 0,
+                  ),
+                  child: const Text('Update Status', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -8,6 +8,8 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../../services/profanity_filter_service.dart';
 import '../../services/push_notification_service.dart';
 import '../../utils/profanity_helper.dart';
+import '../../theme/app_theme.dart';
+import '../../widgets/clean_text_field.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -24,7 +26,6 @@ class _SignupScreenState extends State<SignupScreen> {
   final _confirmPasswordController = TextEditingController();
   final _bioController = TextEditingController();
 
-  bool _obscurePassword = true;
   bool _isLoading = false;
   String? _generatedOTP;
 
@@ -47,7 +48,7 @@ class _SignupScreenState extends State<SignupScreen> {
   Future<void> _validateUsername() async {
     final username = _usernameController.text.trim();
     if (username.isEmpty) {
-      setState(() => _usernameError = 'Username required');
+      if (mounted) setState(() => _usernameError = 'Username required');
       return;
     }
     final usernameQuery = await FirebaseFirestore.instance
@@ -55,9 +56,9 @@ class _SignupScreenState extends State<SignupScreen> {
         .where('username', isEqualTo: username)
         .get();
     if (usernameQuery.docs.isNotEmpty) {
-      setState(() => _usernameError = 'Username is already taken');
+      if (mounted) setState(() => _usernameError = 'Username is already taken');
     } else {
-      setState(() => _usernameError = null);
+      if (mounted) setState(() => _usernameError = null);
     }
   }
 
@@ -132,10 +133,7 @@ class _SignupScreenState extends State<SignupScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // 1. Generate 6 digit OTP
       _generatedOTP = (100000 + Random().nextInt(900000)).toString();
-
-      // 2. Send via Google Apps Script Web App Endpoint
       final url = Uri.parse(
         'https://script.google.com/macros/s/AKfycbyamZ6LtDof6wmKivaIoR7PLqMf4XG8cw7edxnA0wl0w-3Tzsd_WrFFUTqCK59_mSas0Q/exec',
       );
@@ -174,7 +172,7 @@ class _SignupScreenState extends State<SignupScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFFF8F9FB),
+      backgroundColor: context.bg,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
@@ -191,10 +189,10 @@ class _SignupScreenState extends State<SignupScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
+                   Text(
                     'Verify your Email',
                     style: TextStyle(
-                      color: Color(0xFF18181B),
+                      color: context.textHigh,
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                     ),
@@ -203,29 +201,29 @@ class _SignupScreenState extends State<SignupScreen> {
                   Text(
                     'We sent a 6-digit code to ${_emailController.text.trim()}. Please enter it below.',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: Color(0xFF71717A)),
+                    style:  TextStyle(color: context.textMed),
                   ),
                   const SizedBox(height: 24),
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: context.surfaceColor,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFE4E4E7)),
+                      border: Border.all(color: context.border),
                     ),
                     child: TextField(
                       controller: otpController,
                       keyboardType: TextInputType.number,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Color(0xFF18181B),
+                      style:  TextStyle(
+                        color: context.textHigh,
                         fontSize: 24,
                         letterSpacing: 8,
                       ),
-                      decoration: const InputDecoration(
+                      decoration:  InputDecoration(
                         hintText: '000000',
-                        hintStyle: TextStyle(color: Color(0xFFA1A1AA)),
+                        hintStyle: TextStyle(color: context.textLow),
                         border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(
+                        contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 16,
                         ),
@@ -238,7 +236,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     height: 56,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0F2F6A),
+                        backgroundColor: context.primary,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
@@ -249,16 +247,11 @@ class _SignupScreenState extends State<SignupScreen> {
                           ? null
                           : () async {
                               final enteredOtp = otpController.text.trim();
-                               debugPrint('SignupDEBUG: Entered OTP: $enteredOtp, Generated OTP: $_generatedOTP');
                               
                               if (enteredOtp == _generatedOTP) {
                                 setModalState(() => isVerifying = true);
-                                debugPrint('SignupDEBUG: Starting finalizeSignup...');
-                                
                                 try {
                                   bool success = await _finalizeSignup();
-                                  debugPrint('SignupDEBUG: finalizeSignup result: $success');
-                                  
                                   if (!context.mounted) return;
                                   setModalState(() => isVerifying = false);
                                   
@@ -269,7 +262,6 @@ class _SignupScreenState extends State<SignupScreen> {
                                     Navigator.pushReplacementNamed(context, '/skills');
                                   }
                                 } catch (e) {
-                                  debugPrint('SignupDEBUG: Critical error in OTP flow: $e');
                                   if (context.mounted) {
                                     setModalState(() => isVerifying = false);
                                     ScaffoldMessenger.of(context).showSnackBar(
@@ -325,17 +317,14 @@ class _SignupScreenState extends State<SignupScreen> {
     }
 
     try {
-      // Create the user
       final userCredential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(
             email: _emailController.text.trim(),
             password: _passwordController.text,
           );
 
-      // Update standard display name
       await userCredential.user?.updateDisplayName(_nameController.text.trim());
 
-      // Store extra metadata in Firestore
       await FirebaseFirestore.instance
           .collection('users')
           .doc(userCredential.user!.uid)
@@ -374,126 +363,6 @@ class _SignupScreenState extends State<SignupScreen> {
     }
   }
 
-  Widget _buildCardField({
-    required String label,
-    required String hint,
-    required TextEditingController controller,
-    IconData? prefixIcon,
-    bool isPassword = false,
-    bool isObscure = false,
-    VoidCallback? onVisibilityToggle,
-    String? errorText,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(17),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: const Color(0xFFF4F4F5)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 2,
-                offset: const Offset(0, 1),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(left: 4),
-                child: Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFFA1A1AA),
-                    letterSpacing: 1,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  if (prefixIcon != null) ...[
-                    Icon(prefixIcon, size: 18, color: const Color(0xFFA1A1AA)),
-                    const SizedBox(width: 8),
-                  ],
-                  Expanded(
-                    child: FocusScope(
-                      child: Focus(
-                        onFocusChange: (hasFocus) async {
-                          if (!hasFocus) {
-                            if (controller == _usernameController) {
-                              await _validateUsername();
-                            }
-                            if (controller == _passwordController) {
-                              _validatePassword();
-                            }
-                            if (controller == _confirmPasswordController) {
-                              _validateConfirmPassword();
-                            }
-                            if (controller == _emailController) {
-                              _validateEmail();
-                            }
-                          }
-                        },
-                        child: TextField(
-                          controller: controller,
-                          obscureText: isObscure,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF18181B),
-                          ),
-                          decoration: InputDecoration(
-                            hintText: hint,
-                            hintStyle: const TextStyle(
-                              color: Color(0xFFA1A1AA),
-                            ),
-                            isDense: true,
-                            contentPadding: EdgeInsets.zero,
-                            border: InputBorder.none,
-                            enabledBorder: InputBorder.none,
-                            focusedBorder: InputBorder.none,
-                            filled: false,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (isPassword)
-                    GestureDetector(
-                      onTap: onVisibilityToggle,
-                      child: Icon(
-                        isObscure
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined,
-                        size: 18,
-                        color: const Color(0xFFA1A1AA),
-                      ),
-                    ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        if (errorText != null)
-          Padding(
-            padding: const EdgeInsets.only(left: 16, top: 4),
-            child: Text(
-              errorText,
-              style: const TextStyle(color: Colors.redAccent, fontSize: 12),
-            ),
-          ),
-        const SizedBox(height: 16),
-      ],
-    );
-  }
 
   Future<void> _handleGoogleSignIn() async {
     setState(() => _isLoading = true);
@@ -565,7 +434,7 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FB),
+      backgroundColor: context.bg,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -579,7 +448,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.05),
+                    color: context.surfaceLightColor,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Row(
@@ -591,13 +460,13 @@ class _SignupScreenState extends State<SignupScreen> {
                               Navigator.pushReplacementNamed(context, '/login'),
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 10),
-                            child: const Text(
+                            child:  Text(
                               'Sign in',
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
-                                color: Color(0xFFA1A1AA),
+                                color: context.textLow,
                               ),
                             ),
                           ),
@@ -608,23 +477,23 @@ class _SignupScreenState extends State<SignupScreen> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: context.surfaceColor,
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.05),
+                                color: Colors.black.withOpacity(0.05),
                                 blurRadius: 2,
                                 offset: const Offset(0, 1),
                               ),
                             ],
                           ),
-                          child: const Text(
+                          child:  Text(
                             'Sign up',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF18181B),
+                              color: context.textHigh,
                             ),
                           ),
                         ),
@@ -635,77 +504,85 @@ class _SignupScreenState extends State<SignupScreen> {
                 const SizedBox(height: 48),
 
                 // Heading
-                const Text(
+                 Text(
                   'Hello there,',
                   style: TextStyle(
                     fontSize: 30,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF18181B),
+                    color: context.textHigh,
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                 Text(
                   'We are excited to see you here',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w400,
-                    color: Color(0xFF71717A),
+                    color: context.textMed,
                   ),
                 ),
                 const SizedBox(height: 32),
 
                 // Name field
-                _buildCardField(
+                CleanTextField(
                   label: 'NAME',
-                  hint: 'Enter your name',
+                  hintText: 'Enter your name',
                   controller: _nameController,
                   prefixIcon: Icons.person_outline,
                 ),
+                const SizedBox(height: 16),
 
                 // Username field
-                _buildCardField(
+                CleanTextField(
                   label: 'USERNAME',
-                  hint: 'Choose a username',
+                  hintText: 'Choose a username',
                   controller: _usernameController,
                   prefixIcon: Icons.alternate_email,
                   errorText: _usernameError,
+                  onChanged: (val) async {
+                    await _validateUsername();
+                  },
                 ),
+                const SizedBox(height: 16),
 
                 // Email field
-                _buildCardField(
+                CleanTextField(
                   label: 'EMAIL',
-                  hint: 'your@email.com',
+                  hintText: 'your@email.com',
                   controller: _emailController,
                   prefixIcon: Icons.email_outlined,
                   errorText: _emailError,
+                  onChanged: (val) {
+                    _validateEmail();
+                  },
                 ),
+                const SizedBox(height: 16),
 
                 // Password field
-                _buildCardField(
+                CleanTextField(
                   label: 'PASSWORD',
-                  hint: 'Create a password',
+                  hintText: 'Create a password',
                   controller: _passwordController,
                   prefixIcon: Icons.lock_outline,
                   isPassword: true,
-                  isObscure: _obscurePassword,
-                  onVisibilityToggle: () {
-                    setState(() => _obscurePassword = !_obscurePassword);
-                  },
                   errorText: _passwordError,
+                  onChanged: (val) {
+                    _validatePassword();
+                  },
                 ),
+                const SizedBox(height: 16),
 
                 // Confirm Password field
-                _buildCardField(
+                CleanTextField(
                   label: 'CONFIRM PASSWORD',
-                  hint: 'Confirm your password',
+                  hintText: 'Confirm your password',
                   controller: _confirmPasswordController,
                   prefixIcon: Icons.lock_outline,
                   isPassword: true,
-                  isObscure: _obscurePassword,
-                  onVisibilityToggle: () {
-                    setState(() => _obscurePassword = !_obscurePassword);
-                  },
                   errorText: _confirmPasswordError,
+                  onChanged: (val) {
+                    _validateConfirmPassword();
+                  },
                 ),
 
                 const SizedBox(height: 8),
@@ -716,11 +593,11 @@ class _SignupScreenState extends State<SignupScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0F2F6A),
+                      color: context.primary,
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF5E3B95).withValues(alpha: 0.2),
+                          color: context.primary.withOpacity(0.2),
                           blurRadius: 15,
                           offset: const Offset(0, 10),
                           spreadRadius: -3,
@@ -756,24 +633,24 @@ class _SignupScreenState extends State<SignupScreen> {
                     Expanded(
                       child: Container(
                         height: 1,
-                        color: const Color(0xFFE4E4E7),
+                        color: context.border,
                       ),
                     ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16),
+                     Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Text(
                         'Or continue with',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFFA1A1AA),
+                          color: context.textLow,
                         ),
                       ),
                     ),
                     Expanded(
                       child: Container(
                         height: 1,
-                        color: const Color(0xFFE4E4E7),
+                        color: context.border,
                       ),
                     ),
                   ],
@@ -790,12 +667,12 @@ class _SignupScreenState extends State<SignupScreen> {
                         vertical: 15,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: context.surfaceColor,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFFF4F4F5)),
+                        border: Border.all(color: context.border),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
+                            color: Colors.black.withOpacity(0.05),
                             blurRadius: 2,
                             offset: const Offset(0, 1),
                           ),
@@ -809,15 +686,15 @@ class _SignupScreenState extends State<SignupScreen> {
                             height: 20,
                             width: 20,
                             errorBuilder: (context, error, stackTrace) =>
-                                const Icon(Icons.g_mobiledata, size: 20),
+                                 Icon(Icons.g_mobiledata, size: 20, color: context.textHigh),
                           ),
                           const SizedBox(width: 8),
-                          const Text(
+                           Text(
                             'Google',
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF3F3F46),
+                              color: context.textHigh,
                             ),
                           ),
                         ],

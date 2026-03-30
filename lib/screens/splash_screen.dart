@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -59,10 +60,9 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
-    _textSlide = Tween<double>(
-      begin: 20,
-      end: 0,
-    ).animate(CurvedAnimation(parent: _textController, curve: Curves.easeOutCubic));
+    _textSlide = Tween<double>(begin: 20, end: 0).animate(
+      CurvedAnimation(parent: _textController, curve: Curves.easeOutCubic),
+    );
     _textOpacity = CurvedAnimation(
       parent: _textController,
       curve: Curves.easeIn,
@@ -149,7 +149,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.black,
       body: Stack(
         children: [
           // Background Illustration Icons
@@ -187,15 +187,14 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                     );
                   },
-                  child: const Text(
-                    'SKILLZE',
-                    style: TextStyle(
-                      fontSize: 42,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF0F2F6A),
-                      letterSpacing: 4,
-                    ),
+                child: Text(
+                  'Skillze',
+                  style: GoogleFonts.pacifico(
+                    fontSize: 40,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
+                ),
                 ),
               ],
             ),
@@ -263,11 +262,7 @@ class _SplashScreenState extends State<SplashScreen>
           top: size.height * icon.y,
           child: Transform.rotate(
             angle: icon.rotation,
-            child: Icon(
-              icon.iconData,
-              size: icon.size,
-              color: iconColor,
-            ),
+            child: Icon(icon.iconData, size: icon.size, color: iconColor),
           ),
         );
       }).toList(),

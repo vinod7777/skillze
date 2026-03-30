@@ -4,7 +4,7 @@ import '../services/localization_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class ThemeProvider extends ChangeNotifier {
-  ThemeMode _themeMode = ThemeMode.dark;
+  ThemeMode _themeMode = ThemeMode.light;
   double _fontScale = 1.0;
   bool _highContrast = false;
   bool _reduceMotion = false;
@@ -31,7 +31,7 @@ class ThemeProvider extends ChangeNotifier {
       final data = doc.data();
       if (data != null) {
         if (data.containsKey('themeMode')) {
-          _themeMode = data['themeMode'] == 'light' ? ThemeMode.light : ThemeMode.dark;
+          _themeMode = data['themeMode'] == 'dark' ? ThemeMode.dark : ThemeMode.light;
         }
         if (data.containsKey('fontScale')) {
           _fontScale = (data['fontScale'] as num).toDouble();

@@ -1,4 +1,4 @@
-package com.hashtag12345.feed_native
+package com.example.feed_flutter
 
 import io.flutter.embedding.android.FlutterActivity
 

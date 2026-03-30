@@ -27,14 +27,21 @@ class DeepLinkService {
     debugPrint('Received Deep Link: $uri');
     
     // Example Link: skillze://post?id=abc_123 or https://skillze.app/post/abc_123
-    if (uri.scheme == 'skillze' && uri.host == 'post') {
+    // Handle web links: https://skillze.app/post/abc_123
+    if ((uri.scheme == 'http' || uri.scheme == 'https') && uri.host == 'skillze.app') {
+      if (uri.path.startsWith('/post/')) {
+        final postId = uri.pathSegments.isNotEmpty ? uri.pathSegments.last : null;
+        if (postId != null && postId != 'post') {
+          _navigateToPost(navigatorKey, postId);
+        }
+      }
+    } 
+    // Handle custom scheme: skillze://post?id=abc_123
+    else if (uri.scheme == 'skillze' && uri.host == 'post') {
       final postId = uri.queryParameters['id'];
       if (postId != null) {
         _navigateToPost(navigatorKey, postId);
       }
-    } else if (uri.path.startsWith('/post/')) {
-      final postId = uri.pathSegments.last;
-      _navigateToPost(navigatorKey, postId);
     }
   }
 
@@ -47,8 +54,9 @@ class DeepLinkService {
   }
 
   static String generatePostLink(String postId) {
-    // For simplicity, we use the custom scheme skillze://post?id=POST_ID
-    return 'skillze://post?id=$postId';
+    // Return a dual-link message: a clickable HTTPS one for apps like WhatsApp,
+    // and a direct Skillze scheme link that forces the app to open.
+    return 'Check out this post on Skillze: https://skillze.app/post/$postId\n\nDirect App Open: skillze://post?id=$postId';
   }
 
   static void dispose() {

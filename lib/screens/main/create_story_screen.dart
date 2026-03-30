@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'dart:io' as io;
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
@@ -8,6 +9,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/profanity_filter_service.dart';
 import '../../utils/profanity_helper.dart';
 import '../../utils/mention_helper.dart';
+import '../../widgets/modern_image_editor.dart';
+import '../../theme/app_theme.dart';
 
 class CreateStoryScreen extends StatefulWidget {
   const CreateStoryScreen({super.key});
@@ -19,11 +22,10 @@ class CreateStoryScreen extends StatefulWidget {
 class _CreateStoryScreenState extends State<CreateStoryScreen> {
   final ImagePicker _picker = ImagePicker();
   final TextEditingController _captionController = TextEditingController();
-  XFile? _selectedMedia;
+  Uint8List? _editedMediaBytes;
   bool _isUploading = false;
   static const String _imgbbApiKey = '9b144936080b6683b78410f3898f743d';
 
-  List<String> _followingList = [];
   List<Map<String, dynamic>> _mentionSuggestions = [];
   String? _currentMentionQuery;
   int _mentionStartIndex = -1;
@@ -31,15 +33,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchFollowingList();
     _captionController.addListener(_onCaptionChanged);
-  }
-
-  Future<void> _fetchFollowingList() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-    final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-    _followingList = List<String>.from(doc.data()?['followingList'] ?? []);
   }
 
   void _onCaptionChanged() {
@@ -77,12 +71,13 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
 
   Future<void> _fetchMentionSuggestions(String query) async {
     if (query.isEmpty) {
-      if (_followingList.isEmpty) return;
-      final uidsToFetch = _followingList.take(10).toList();
-      if (uidsToFetch.isEmpty) return;
-      
-      final snapshot = await FirebaseFirestore.instance.collection('users').where(FieldPath.documentId, whereIn: uidsToFetch).get();
-      if (mounted && _currentMentionQuery == "") {
+      // Just fetch some general users if query is empty
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .limit(20)
+          .get();
+
+      if (mounted && (_currentMentionQuery == null || _currentMentionQuery!.isEmpty)) {
         setState(() {
           _mentionSuggestions = snapshot.docs.map((d) => {'uid': d.id, ...d.data()}).toList();
         });
@@ -90,8 +85,11 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
       return;
     }
 
+    // Give suggestions according to what the user types
     final queryLower = query.toLowerCase();
-    final snapshot = await FirebaseFirestore.instance
+    
+    // First query by username
+    final usernameSnapshot = await FirebaseFirestore.instance
         .collection('users')
         .where('username', isGreaterThanOrEqualTo: queryLower)
         .where('username', isLessThan: '${queryLower}z')
@@ -99,10 +97,9 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
         .get();
 
     if (mounted && _currentMentionQuery == query) {
-      final results = snapshot.docs.map((d) => {'uid': d.id, ...d.data()}).toList();
-      final filtered = results.where((u) => _followingList.contains(u['uid'])).toList();
+      final results = usernameSnapshot.docs.map((d) => {'uid': d.id, ...d.data()}).toList();
       setState(() {
-        _mentionSuggestions = filtered;
+        _mentionSuggestions = results;
       });
     }
   }
@@ -131,21 +128,26 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
     super.dispose();
   }
 
-  Future<void> _pickMedia() async {
+  Future<void> _pickMedia(ImageSource source) async {
     final XFile? media = await _picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 70,
+      source: source,
     );
-    if (media != null) {
-      setState(() {
-        _selectedMedia = media;
-      });
+    if (media != null && mounted) {
+      ModernImageEditor.open(
+        context,
+        imagePath: media.path,
+        mode: EditorMode.story,
+        onComplete: (bytes) {
+          setState(() {
+            _editedMediaBytes = bytes;
+          });
+        },
+      );
     }
   }
 
-  Future<String?> _uploadToImgBB(XFile imageFile) async {
+  Future<String?> _uploadToImgBB(Uint8List bytes) async {
     try {
-      final bytes = await imageFile.readAsBytes();
       final base64Image = base64Encode(bytes);
 
       final response = await http.post(
@@ -167,7 +169,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
   }
 
   Future<void> _handleUpload() async {
-    if (_selectedMedia == null) return;
+    if (_editedMediaBytes == null) return;
 
     setState(() => _isUploading = true);
 
@@ -178,20 +180,22 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
       final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
       final userData = userDoc.data() ?? {};
 
-      final url = await _uploadToImgBB(_selectedMedia!);
+      final url = await _uploadToImgBB(_editedMediaBytes!);
       if (url == null) throw Exception('Upload failed');
 
       final caption = _captionController.text.trim();
       
       if (ProfanityFilterService.hasProfanity(caption)) {
-        showProfanityWarning(context);
+        if (mounted) {
+          showProfanityWarning(context);
+        }
         return;
       }
 
       await FirebaseFirestore.instance.collection('stories').add({
         'userId': user.uid,
         'userName': userData['displayName'] ?? userData['name'] ?? 'User',
-        'userAvatar': userData['photoUrl'] ?? userData['profileImageUrl'] ?? '',
+        'userAvatar': userData['profileImageUrl'] ?? userData['photoUrl'] ?? userData['photoURL'] ?? userData['avatar'] ?? '',
         'mediaUrl': url,
         'caption': caption,
         'type': 'image',
@@ -224,145 +228,289 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false, // Prevent the background image from squishing
+      resizeToAvoidBottomInset: false,
       backgroundColor: Colors.black,
       body: Stack(
         fit: StackFit.expand,
         children: [
-          if (_selectedMedia != null)
-            Image.file(io.File(_selectedMedia!.path), fit: BoxFit.cover)
+          // Background / Preview
+          if (_editedMediaBytes != null)
+            Image.memory(_editedMediaBytes!, fit: BoxFit.cover)
           else
-            Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                   const Icon(Icons.add_a_photo_outlined, size: 64, color: Colors.white),
-                   const SizedBox(height: 16),
-                   ElevatedButton(
-                     onPressed: _pickMedia,
-                     child: const Text('Select Photo'),
-                   ),
-                ],
-              ),
-            ),
+            _buildEmptySelectionGrid(),
           
+          // Navigation Overlay
           Positioned(
-            top: 40,
+            top: MediaQuery.of(context).padding.top + 10,
             left: 20,
-            child: IconButton(
-              icon: const Icon(Icons.close, color: Colors.white, size: 32),
-              onPressed: () => Navigator.pop(context),
+            right: 20,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildCircularIcon(
+                  icon: Icons.close_rounded,
+                  onTap: () => Navigator.pop(context),
+                ),
+                if (_editedMediaBytes != null)
+                   const Text(
+                    'Your Story',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      shadows: [Shadow(color: Colors.black54, blurRadius: 10)],
+                    ),
+                  ),
+                if (_editedMediaBytes != null)
+                  _buildCircularIcon(
+                    icon: Icons.crop_rotate_rounded,
+                    onTap: () {
+                      _pickMedia(ImageSource.gallery); 
+                    },
+                  ),
+              ],
             ),
           ),
           
-          if (_mentionSuggestions.isNotEmpty && _currentMentionQuery != null) ...[
-            AnimatedPositioned(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeOut,
-              left: 20,
-              right: 20,
+          // Mention Suggestions
+          if (_mentionSuggestions.isNotEmpty && _currentMentionQuery != null)
+            Positioned(
+              left: 24,
+              right: 24,
               bottom: (MediaQuery.of(context).viewInsets.bottom > 0 
-                  ? MediaQuery.of(context).viewInsets.bottom + 20 
-                  : 120) + 140, // sit above the text field
+                  ? MediaQuery.of(context).viewInsets.bottom + 10 
+                  : 120) + 120,
               child: Container(
-                constraints: const BoxConstraints(maxHeight: 200),
+                constraints: const BoxConstraints(maxHeight: 180),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.8),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white24, width: 1.5),
+                  color: Colors.black.withOpacity(0.8),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white10),
                 ),
                 child: ListView.builder(
                   shrinkWrap: true,
-                  padding: EdgeInsets.zero,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
                   itemCount: _mentionSuggestions.length,
                   itemBuilder: (context, index) {
                     final user = _mentionSuggestions[index];
-                    final username = user['username'] ?? '';
-                    final name = user['name'] ?? '';
-                    final avatar = user['profileImageUrl'] ?? user['authorProfileImageUrl'] ?? user['photoUrl'] ?? '';
-                    
-                    return ListTile(
-                      leading: CircleAvatar(
-                        radius: 16,
-                        backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null,
-                        child: avatar.isEmpty ? const Icon(Icons.person, size: 16) : null,
-                      ),
-                      title: Text(username, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                      subtitle: Text(name, style: const TextStyle(color: Colors.white70)),
-                      onTap: () => _insertMention(username),
-                    );
+                    return _buildMentionTile(user);
                   },
                 ),
               ),
             ),
-          ],
           
-          if (_selectedMedia != null)
+          // Bottom Actions & Caption
+          if (_editedMediaBytes != null)
             AnimatedPositioned(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeOut,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutCubic,
+              bottom: MediaQuery.of(context).viewInsets.bottom > 0 
+                  ? MediaQuery.of(context).viewInsets.bottom + 16 
+                  : 40,
               left: 20,
               right: 20,
-              bottom: MediaQuery.of(context).viewInsets.bottom > 0 
-                  ? MediaQuery.of(context).viewInsets.bottom + 20 
-                  : 120,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.65), // Stronger glass effect
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: Colors.white24, width: 1.5),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black45,
-                      blurRadius: 10,
-                      offset: Offset(0, 5),
-                    )
-                  ],
-                ),
-                child: TextField(
-                  controller: _captionController,
-                  style: const TextStyle(
-                    color: Colors.white, 
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  textAlign: TextAlign.center,
-                  decoration: const InputDecoration(
-                    hintText: 'Add a caption... (@username)',
-                    hintStyle: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 16,
-                      fontWeight: FontWeight.normal,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Sleek Caption Input
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(30),
+                    child: BackdropFilter(
+                      filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.4),
+                          borderRadius: BorderRadius.circular(30),
+                          border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
+                        ),
+                        child: TextField(
+                          controller: _captionController,
+                          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
+                          decoration: InputDecoration(
+                            border: InputBorder.none,
+                            hintText: 'Add a caption...',
+                            hintStyle: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 16),
+                            contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                            filled: true,
+                            fillColor: Colors.transparent,
+                          ),
+                          maxLines: 4,
+                          minLines: 1,
+                          textInputAction: TextInputAction.done,
+                          cursorColor: Colors.white,
+                          onSubmitted: (_) => FocusScope.of(context).unfocus(),
+                        ),
+                      ),
                     ),
-                    border: InputBorder.none,
-                    filled: false,
-                    fillColor: Colors.transparent,
                   ),
-                  maxLines: 4,
-                  minLines: 1,
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: (_) {
-                    FocusScope.of(context).unfocus();
-                  },
-                ),
+                  
+                  // Share Button (hides when typing to give more space, or we can keep it)
+                  if (MediaQuery.of(context).viewInsets.bottom == 0) ...[
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildShareButton(),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
               ),
             ),
-          
-          if (_selectedMedia != null)
-            Positioned(
-              bottom: 40,
-              right: 20,
-              child: FloatingActionButton.extended(
-                backgroundColor: const Color(0xFF0F2F6A),
-                onPressed: _isUploading ? null : _handleUpload,
-                label: _isUploading 
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text('Add to Story', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                icon: const Icon(Icons.send_rounded, color: Colors.white),
+
+          if (_isUploading)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black54,
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const CircularProgressIndicator(color: Colors.white),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Sharing to Story...',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildEmptySelectionGrid() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.black,
+        gradient: LinearGradient(
+          colors: [Colors.black, context.primary.withOpacity(0.2)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.auto_awesome_mosaic_rounded, size: 80, color: Colors.white24),
+          const SizedBox(height: 32),
+          const Text(
+            'Create a Story',
+            style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Share a moment with your connections',
+            style: TextStyle(color: Colors.white60, fontSize: 14),
+          ),
+          const SizedBox(height: 48),
+          _buildSelectionButton(
+            icon: Icons.photo_library_outlined,
+            label: 'Open Gallery',
+            onTap: () => _pickMedia(ImageSource.gallery),
+          ),
+          const SizedBox(height: 16),
+          _buildSelectionButton(
+            icon: Icons.camera_alt_outlined,
+            label: 'Take a Photo',
+            onTap: () => _pickMedia(ImageSource.camera),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSelectionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 48),
+      child: ElevatedButton(
+        onPressed: onTap,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          elevation: 0,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon),
+            const SizedBox(width: 12),
+            Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCircularIcon({required IconData icon, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.5),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: Colors.white, size: 24),
+      ),
+    );
+  }
+
+  Widget _buildMentionTile(Map<String, dynamic> user) {
+    final avatar = user['profileImageUrl'] ?? '';
+    final username = user['username'] ?? '';
+    return ListTile(
+      leading: CircleAvatar(
+        radius: 16,
+        backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null,
+        backgroundColor: Colors.grey[800],
+        child: avatar.isEmpty ? const Icon(Icons.person, size: 16, color: Colors.white) : null,
+      ),
+      title: Text(username, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+      onTap: () => _insertMention(username),
+    );
+  }
+
+  Widget _buildShareButton() {
+    return Container(
+      height: 56,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 5)),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _handleUpload,
+          borderRadius: BorderRadius.circular(28),
+          child: Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                Text(
+                  'Share to Story',
+                  style: TextStyle(color: Colors.black, fontWeight: FontWeight.w900, fontSize: 16),
+                ),
+                SizedBox(width: 8),
+                Icon(Icons.arrow_forward_ios_rounded, color: Colors.black, size: 16),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

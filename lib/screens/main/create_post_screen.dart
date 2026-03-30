@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:ui';
+import 'dart:ui' as ui;
 import 'dart:io' as io;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -8,13 +8,17 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:geocoding/geocoding.dart';
 import 'custom_camera_screen.dart';
+import 'location_picker_screen.dart';
+import 'package:latlong2/latlong.dart';
 import '../../theme/app_theme.dart';
 import '../../services/profanity_filter_service.dart';
 import '../../utils/profanity_helper.dart';
 import '../../utils/mention_helper.dart';
+import '../../widgets/image_viewer_dialog.dart';
+import '../../services/notification_service.dart';
+import '../../widgets/clean_multiline_input.dart';
+import '../../widgets/clean_text_field.dart';
 
 class CreatePostScreen extends StatefulWidget {
   final DocumentSnapshot? postDoc;
@@ -28,15 +32,16 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   final _postController = TextEditingController();
   final _skillSearchController = TextEditingController();
   final _roleSearchController = TextEditingController();
-  final _rulesController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
 
   final List<XFile> _selectedImages = [];
   bool _isPosting = false;
-  bool _isLoadingLocation = false;
+  final bool _isLoadingLocation = false;
   final String _selectedVisibility = 'Public';
   bool _shareToFollowingOnly = false;
   String _location = 'Add Location';
+  double? _postLat;
+  double? _postLng;
   final List<String> _selectedSkills = [];
   final List<String> _selectedRoles = [];
 
@@ -49,7 +54,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   // ImgBB API Key â€” user should replace with their own
   static const String _imgbbApiKey = '9b144936080b6683b78410f3898f743d';
 
-  List<String> _followingList = [];
   List<Map<String, dynamic>> _mentionSuggestions = [];
   String? _currentMentionQuery;
   int _mentionStartIndex = -1;
@@ -57,19 +61,18 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchFollowingList();
     _postController.addListener(_onPostChanged);
     _skillSearchController.addListener(() => setState(() {}));
     _roleSearchController.addListener(() => setState(() {}));
-    _rulesController.addListener(() => setState(() {}));
 
     if (widget.postDoc != null) {
       final data = widget.postDoc!.data() as Map<String, dynamic>;
       _postController.text = data['content'] ?? '';
       _location = data['location'] ?? 'Add Location';
+      _postLat = data['latitude'] != null ? (data['latitude'] as num).toDouble() : null;
+      _postLng = data['longitude'] != null ? (data['longitude'] as num).toDouble() : null;
       _selectedSkills.addAll(List<String>.from(data['skills'] ?? []));
       _selectedRoles.addAll(List<String>.from(data['roles'] ?? []));
-      _rulesController.text = data['rules'] ?? '';
       _shareToFollowingOnly = data['visibility'] == 'network';
       
       // Note: We don't populate _selectedImages with URLs directly since _selectedImages is List<XFile>.
@@ -78,12 +81,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     }
   }
 
-  Future<void> _fetchFollowingList() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-    final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-    _followingList = List<String>.from(doc.data()?['followingList'] ?? []);
-  }
+
 
   void _onPostChanged() {
     setState(() {}); // Original listener logic
@@ -122,12 +120,13 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   Future<void> _fetchMentionSuggestions(String query) async {
     if (query.isEmpty) {
-      if (_followingList.isEmpty) return;
-      final uidsToFetch = _followingList.take(10).toList();
-      if (uidsToFetch.isEmpty) return;
-      
-      final snapshot = await FirebaseFirestore.instance.collection('users').where(FieldPath.documentId, whereIn: uidsToFetch).get();
-      if (mounted && _currentMentionQuery == "") {
+      // Just fetch some general users if query is empty
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .limit(20)
+          .get();
+
+      if (mounted && (_currentMentionQuery == null || _currentMentionQuery!.isEmpty)) {
         setState(() {
           _mentionSuggestions = snapshot.docs.map((d) => {'uid': d.id, ...d.data()}).toList();
         });
@@ -135,8 +134,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       return;
     }
 
+    // Give suggestions according to what the user types
     final queryLower = query.toLowerCase();
-    final snapshot = await FirebaseFirestore.instance
+    
+    // First query by username
+    final usernameSnapshot = await FirebaseFirestore.instance
         .collection('users')
         .where('username', isGreaterThanOrEqualTo: queryLower)
         .where('username', isLessThan: '${queryLower}z')
@@ -144,10 +146,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         .get();
 
     if (mounted && _currentMentionQuery == query) {
-      final results = snapshot.docs.map((d) => {'uid': d.id, ...d.data()}).toList();
-      final filtered = results.where((u) => _followingList.contains(u['uid'])).toList();
+      final results = usernameSnapshot.docs.map((d) => {'uid': d.id, ...d.data()}).toList();
       setState(() {
-        _mentionSuggestions = filtered;
+        _mentionSuggestions = results;
       });
     }
   }
@@ -174,44 +175,27 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     _postController.dispose();
     _skillSearchController.dispose();
     _roleSearchController.dispose();
-    _rulesController.dispose();
     super.dispose();
   }
 
-  Future<void> _getCurrentLocation() async {
-    setState(() => _isLoadingLocation = true);
-    try {
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
+  Future<void> _navigateLocationPicker() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LocationPickerScreen(
+          initialLocation: (_postLat != null && _postLng != null)
+              ? LatLng(_postLat!, _postLng!)
+              : null,
+        ),
+      ),
+    );
 
-      if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
-        Position position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high,
-        );
-
-        List<Placemark> placemarks = await placemarkFromCoordinates(
-          position.latitude,
-          position.longitude,
-        );
-
-        if (placemarks.isNotEmpty) {
-          final place = placemarks.first;
-          setState(() {
-            _location = '${place.locality}, ${place.administrativeArea}';
-          });
-        }
-      }
-    } catch (e) {
-      debugPrint('Error getting location: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to get location. Please try again.')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoadingLocation = false);
+    if (result != null && result is Map<String, dynamic>) {
+      setState(() {
+        _location = result['name'];
+        _postLat = result['lat'];
+        _postLng = result['lng'];
+      });
     }
   }
 
@@ -282,8 +266,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   }
 
   Future<void> _handlePost() async {
-    final textContent = _postController.text.trim();
-    final rulesText = _rulesController.text.trim();
+    // Normalize content one final time before submission
+    final textContent = CleanMultilineInput.normalize(_postController.text);
     
     if (textContent.isEmpty && _selectedImages.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -293,7 +277,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     }
 
     bool hasBadWords = ProfanityFilterService.hasProfanity(textContent) || 
-                      ProfanityFilterService.hasProfanity(rulesText) ||
                       _selectedSkills.any((s) => ProfanityFilterService.hasProfanity(s)) ||
                       _selectedRoles.any((r) => ProfanityFilterService.hasProfanity(r));
 
@@ -344,12 +327,13 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
       // Create or Update post document in Firestore
       final Map<String, dynamic> postData = {
-        'content': _postController.text.trim(),
+        'content': textContent,
         'visibility': _shareToFollowingOnly ? 'network' : _selectedVisibility.toLowerCase(),
         'skills': _selectedSkills,
         'roles': _selectedRoles,
-        'rules': _rulesController.text.trim(),
         'location': _location,
+        'latitude': _postLat,
+        'longitude': _postLng,
         'timestamp': FieldValue.serverTimestamp(),
       };
 
@@ -369,11 +353,42 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         newPostRef = await FirebaseFirestore.instance.collection('posts').add(postData);
       } else {
         // EDIT EXISTING
+        postData['isEdited'] = true;
+        debugPrint('Updating post ${widget.postDoc!.id} with isEdited=true');
         if (mediaUrls.isNotEmpty) {
           postData['mediaUrls'] = mediaUrls;
           postData['mediaUrl'] = mediaUrls.first;
         }
         await widget.postDoc!.reference.update(postData);
+      }
+
+      // --- NEW: Notify Followers ---
+      if (widget.postDoc == null) {
+        final currentUserId = user.uid;
+        final currentUserDoc = await FirebaseFirestore.instance.collection('users').doc(currentUserId).get();
+        final followersList = List<String>.from(currentUserDoc.data()?['followersList'] ?? []);
+        final myName = currentUserDoc.data()?['name'] ?? 'Someone';
+        final myPhoto = currentUserDoc.data()?['profileImageUrl'];
+        
+        final postContent = postData['content']?.toString() ?? '';
+        final truncatedContent = postContent.length > 30 
+            ? '${postContent.substring(0, 30)}...' 
+            : postContent;
+
+        // Notify up to first 20 followers in parallel
+        final notificationTasks = followersList.take(20).where((id) => id != currentUserId).map((followerId) {
+          return NotificationService.sendNotification(
+            targetUserId: followerId,
+            type: 'new_post',
+            message: 'published a new post: $truncatedContent',
+            postId: newPostRef?.id,
+            actorName: myName, // Pass cached name
+            actorPhoto: myPhoto, // Pass cached photo
+          );
+        });
+        
+        // Fire and forget, or wait if needed. We'll wait to ensure stability but in parallel it's fast.
+        Future.wait(notificationTasks);
       }
 
       // Process mentions
@@ -441,7 +456,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
               child: _isPosting
@@ -474,7 +489,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   width: double.infinity,
                   height: 180,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(10),
                     color: context.surfaceLightColor,
                   ),
                   child: _selectedImages.isEmpty
@@ -488,7 +503,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              'Add photos or videos',
+                              'Add photos',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 17,
@@ -507,7 +522,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                           ],
                         )
                       : ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(10),
                           child: Stack(
                             fit: StackFit.expand,
                             children: [
@@ -524,9 +539,20 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                                   return Stack(
                                     fit: StackFit.expand,
                                     children: [
-                                      kIsWeb
-                                          ? Image.network(image.path, fit: BoxFit.cover)
-                                          : Image.file(io.File(image.path), fit: BoxFit.cover),
+                                      GestureDetector(
+                                        onTap: () {
+                                          ImageViewerDialog.show(
+                                            context, 
+                                            null, 
+                                            'Preview',
+                                            filePath: image.path,
+                                            isCircular: false,
+                                          );
+                                        },
+                                        child: kIsWeb
+                                            ? Image.network(image.path, fit: BoxFit.cover)
+                                            : Image.file(io.File(image.path), fit: BoxFit.cover),
+                                      ),
                                       Container(color: Colors.black12),
                                       Positioned(
                                         top: 12,
@@ -587,17 +613,13 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Content Input
-            TextField(
+            // Content Input - Using the new premium CleanMultilineInput
+            CleanMultilineInput(
               controller: _postController,
-              maxLines: null,
-              minLines: 3,
-              style: TextStyle(fontSize: 16, color: context.textHigh, height: 1.5),
-              decoration: InputDecoration(
-                hintText: 'What are you sharing today? (use @username to mention)',
-                hintStyle: TextStyle(color: context.textLow, fontSize: 15),
-                border: InputBorder.none,
-              ),
+              hintText: 'What are you sharing today? (use @ to mention)',
+              onChanged: (val) {
+                _onPostChanged(); // Maintain the original mention searching logic
+              },
             ),
             
             if (_mentionSuggestions.isNotEmpty && _currentMentionQuery != null) ...[
@@ -606,7 +628,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 decoration: BoxDecoration(
                   color: context.surfaceLightColor,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: context.border.withValues(alpha: 0.2)),
+                  border: Border.all(color: context.border.withOpacity(0.2)),
                   boxShadow: [
                     BoxShadow(color: Colors.black12, blurRadius: 4, offset: const Offset(0, 2))
                   ],
@@ -646,29 +668,16 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w800,
-                color: context.textLow,
-                letterSpacing: 1,
+                color: context.textMed,
+                letterSpacing: 1.2,
               ),
             ),
             const SizedBox(height: 12),
-            Container(
-              decoration: BoxDecoration(
-                color: context.surfaceLightColor,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: context.border),
-              ),
-              child: TextField(
-                controller: _skillSearchController,
-                style: TextStyle(color: context.textHigh),
-                decoration: InputDecoration(
-                  hintText: 'Search skills (e.g. UI Design, Python...)',
-                  hintStyle: TextStyle(color: context.textLow, fontSize: 14),
-                  prefixIcon: Icon(Icons.search_rounded, color: context.textLow, size: 20),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 15),
-                ),
-                onChanged: (val) => setState(() {}),
-              ),
+            CleanTextField(
+              controller: _skillSearchController,
+              hintText: 'Search skills (e.g. UI Design, Python...)',
+              prefixIcon: Icons.search_rounded,
+              onChanged: (val) => setState(() {}),
             ),
             const SizedBox(height: 12),
             Wrap(
@@ -679,12 +688,12 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [context.primary, context.primary.withValues(alpha: 0.8)],
+                      colors: [context.secondary, context.secondary.withOpacity(0.8)],
                     ),
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: context.primary.withValues(alpha: 0.2),
+                        color: context.secondary.withOpacity(0.2),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       )
@@ -703,7 +712,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                         child: Container(
                           padding: const EdgeInsets.all(2),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
+                            color: Colors.white.withOpacity(0.2),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.close_rounded, size: 12, color: Colors.white),
@@ -748,7 +757,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                         },
                       ),
                     ..._suggestedSkills
-                        .where((s) => s.toLowerCase().contains(_skillSearchController.text.toLowerCase()) && !_selectedSkills.contains(s))
+                        .where((s) => s.toLowerCase().contains(_skillSearchController.text.toLowerCase().trim().replaceAll('_', ' ')) && !_selectedSkills.contains(s))
                         .map((skill) => ListTile(
                               title: Text(skill, style: TextStyle(color: context.textHigh)),
                               onTap: () {
@@ -770,29 +779,16 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w800,
-                color: context.textLow,
-                letterSpacing: 1,
+                color: context.textMed,
+                letterSpacing: 1.2,
               ),
             ),
             const SizedBox(height: 12),
-            Container(
-              decoration: BoxDecoration(
-                color: context.surfaceLightColor,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: context.border),
-              ),
-              child: TextField(
-                controller: _roleSearchController,
-                style: TextStyle(color: context.textHigh),
-                decoration: InputDecoration(
-                  hintText: 'Type your role (e.g. Lead Dev, Designer...)',
-                  hintStyle: TextStyle(color: context.textLow, fontSize: 14),
-                  prefixIcon: Icon(Icons.work_outline_rounded, color: context.textLow, size: 20),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 15),
-                ),
-                onChanged: (val) => setState(() {}),
-              ),
+            CleanTextField(
+              controller: _roleSearchController,
+              hintText: 'Type your role (e.g. Lead Dev, Designer...)',
+              prefixIcon: Icons.work_outline_rounded,
+              onChanged: (val) => setState(() {}),
             ),
             const SizedBox(height: 12),
             Wrap(
@@ -816,12 +812,22 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     duration: const Duration(milliseconds: 200),
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
-                      color: isSelected ? context.secondary : context.surfaceLightColor,
+                      gradient: isSelected 
+                          ? LinearGradient(colors: [context.secondary, context.secondary.withOpacity(0.8)])
+                          : null,
+                      color: isSelected ? null : context.surfaceLightColor,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: isSelected ? context.secondary : context.border,
                         width: 1.5,
                       ),
+                      boxShadow: isSelected ? [
+                        BoxShadow(
+                          color: context.secondary.withOpacity(0.2),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        )
+                      ] : null,
                     ),
                     child: Text(
                       role,
@@ -866,57 +872,41 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 return Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
-                    color: context.secondary.withOpacity(0.1),
+                    gradient: LinearGradient(
+                      colors: [context.secondary, context.secondary.withOpacity(0.8)],
+                    ),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: context.secondary.withOpacity(0.3)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: context.secondary.withOpacity(0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      )
+                    ],
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         role,
-                        style: TextStyle(color: context.secondary, fontSize: 12, fontWeight: FontWeight.w700),
+                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(width: 8),
                       GestureDetector(
                         onTap: () => setState(() => _selectedRoles.remove(role)),
-                        child: Icon(Icons.close_rounded, size: 12, color: context.secondary),
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.close_rounded, size: 12, color: Colors.white),
+                        ),
                       ),
                     ],
                   ),
                 );
               }).toList(),
-            ),
-            const SizedBox(height: 40),
-
-            // RULES
-            Text(
-              'RULES (OPTIONAL)',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                color: context.textLow,
-                letterSpacing: 1,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              decoration: BoxDecoration(
-                color: context.surfaceLightColor,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: context.border),
-              ),
-              child: TextField(
-                controller: _rulesController,
-                maxLines: 3,
-                style: TextStyle(color: context.textHigh),
-                decoration: InputDecoration(
-                  hintText: 'Add rules for engagement, collaboration, etc.',
-                  hintStyle: TextStyle(color: context.textLow, fontSize: 14),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.all(15),
-                ),
-              ),
             ),
             const SizedBox(height: 40),
 
@@ -965,7 +955,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
             // Location
             GestureDetector(
-              onTap: _isLoadingLocation ? null : _getCurrentLocation,
+              onTap: _isLoadingLocation ? null : _navigateLocationPicker,
               child: Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -1034,15 +1024,15 @@ class DashedBorderPainter extends CustomPainter {
       ..strokeWidth = strokeWidth
       ..style = PaintingStyle.stroke;
 
-    final Path path = Path()
-      ..addRRect(RRect.fromRectAndRadius(
+    final ui.Path path = ui.Path();
+    path.addRRect(RRect.fromRectAndRadius(
         Rect.fromLTWH(0, 0, size.width, size.height),
         const Radius.circular(20),
       ));
 
     final List<double> dashArray = [gap, gap];
     double distance = 0.0;
-    for (final PathMetric measure in path.computeMetrics()) {
+    for (final ui.PathMetric measure in path.computeMetrics()) {
       while (distance < measure.length) {
         final double length = dashArray[0];
         canvas.drawPath(

@@ -3,27 +3,27 @@ import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   // Midnight Ocean Core Colors
-  static const Color background = Color(0xFF0F111A);
-  static const Color surface = Color(0xFF1C1E2C);
-  static const Color surfaceLight = Color(0xFF2A2D40);
+  static const Color background = Color(0xFF000000);
+  static const Color surface = Color(0xFF000000);
+  static const Color surfaceLight = Color(0xFF151515);
 
   // Vibrant Accents
-  static const Color primary = Color(0xFF0F2F6A);   // Deep Navy (Brand)
-  static const Color primaryLight = Color(0xFF818CF8); // Indigo for Dark Mode
-  static const Color secondary = Color(0xFFEC4899); // Pink
-  static const Color tertiary = Color(0xFF06B6D4); // Cyan
+  static const Color primary = Color(0xFF0F2F6A);   // Deep Navy (Brand for light)
+  static const Color primaryLight = Color(0xFFFFFFFF); // White for Dark Mode
+  static const Color secondary = Color(0xFFFFFFFF); // White for Dark Mode
+  static const Color tertiary = Color(0xFFFFFFFF); // White for Dark Mode
 
-  // Text Colors
-  static const Color textHighEmphasis = Color(0xFFF8FAFC);
-  static const Color textMediumEmphasis = Color(0xFF94A3B8);
-  static const Color textLowEmphasis = Color(0xFF475569);
+  // Text Colors (Dark Mode)
+  static const Color textHighEmphasis = Color(0xFFFFFFFF);
+  static const Color textMediumEmphasis = Color(0xFFA3A3A3);
+  static const Color textLowEmphasis = Color(0xFF666666);
 
-  // Borders
-  static const Color borderOverlay = Color(0x33FFFFFF);
+  // Borders (Dark Mode)
+  static final Color borderOverlay = const Color(0xFFFFFFFF).withOpacity(0.15);
 
   // Gradients
   static const LinearGradient primaryGradient = LinearGradient(
-    colors: [primary, secondary],
+    colors: [Colors.white, Color(0xFFAAAAAA)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
@@ -39,70 +39,39 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.dark,
       scaffoldBackgroundColor: background,
-      colorScheme: const ColorScheme.dark(
+      colorScheme: ColorScheme.dark(
         primary: primaryLight,
+        onPrimary: Colors.black, // Dark text on white buttons
         secondary: secondary,
+        onSecondary: Colors.black,
         tertiary: tertiary,
         surface: surface,
         onSurface: textHighEmphasis,
-        onPrimary: Colors.white,
+        onSurfaceVariant: textMediumEmphasis,
+        outline: textLowEmphasis,
+        error: Colors.white,
+        onError: Colors.black,
+        surfaceContainer: surfaceLight,
       ),
-      textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme)
-          .copyWith(
-            displayLarge: GoogleFonts.outfit(
-              fontWeight: FontWeight.bold,
-              color: textHighEmphasis,
-            ),
-            displayMedium: GoogleFonts.outfit(
-              fontWeight: FontWeight.bold,
-              color: textHighEmphasis,
-            ),
-            displaySmall: GoogleFonts.outfit(
-              fontWeight: FontWeight.bold,
-              color: textHighEmphasis,
-            ),
-            headlineLarge: GoogleFonts.outfit(
-              fontWeight: FontWeight.w700,
-              color: textHighEmphasis,
-            ),
-            headlineMedium: GoogleFonts.outfit(
-              fontWeight: FontWeight.w700,
-              color: textHighEmphasis,
-            ),
-            headlineSmall: GoogleFonts.outfit(
-              fontWeight: FontWeight.w700,
-              color: textHighEmphasis,
-            ),
-            titleLarge: GoogleFonts.outfit(
-              fontWeight: FontWeight.w600,
-              color: textHighEmphasis,
-            ),
-            titleMedium: GoogleFonts.outfit(
-              fontWeight: FontWeight.w600,
-              color: textHighEmphasis,
-            ),
-            titleSmall: GoogleFonts.outfit(
-              fontWeight: FontWeight.w600,
-              color: textHighEmphasis,
-            ),
-            bodyLarge: GoogleFonts.inter(color: textHighEmphasis),
-            bodyMedium: GoogleFonts.inter(color: textHighEmphasis),
-            bodySmall: GoogleFonts.inter(color: textMediumEmphasis),
-            labelLarge: GoogleFonts.inter(
-              fontWeight: FontWeight.w600,
-              color: textHighEmphasis,
-            ),
-            labelMedium: GoogleFonts.inter(
-              fontWeight: FontWeight.w600,
-              color: textMediumEmphasis,
-            ),
-            labelSmall: GoogleFonts.inter(
-              fontWeight: FontWeight.w600,
-              color: textMediumEmphasis,
-            ),
-          ),
+      textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme).copyWith(
+        displayLarge: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: textHighEmphasis).copyWith(inherit: true),
+        displayMedium: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: textHighEmphasis).copyWith(inherit: true),
+        displaySmall: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: textHighEmphasis).copyWith(inherit: true),
+        headlineLarge: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: textHighEmphasis).copyWith(inherit: true),
+        headlineMedium: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: textHighEmphasis).copyWith(inherit: true),
+        headlineSmall: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: textHighEmphasis).copyWith(inherit: true),
+        titleLarge: GoogleFonts.outfit(fontWeight: FontWeight.w600, color: textHighEmphasis).copyWith(inherit: true),
+        titleMedium: GoogleFonts.outfit(fontWeight: FontWeight.w600, color: textHighEmphasis).copyWith(inherit: true),
+        titleSmall: GoogleFonts.outfit(fontWeight: FontWeight.w600, color: textHighEmphasis).copyWith(inherit: true),
+        bodyLarge: GoogleFonts.inter(color: textHighEmphasis).copyWith(inherit: true),
+        bodyMedium: GoogleFonts.inter(color: textHighEmphasis).copyWith(inherit: true),
+        bodySmall: GoogleFonts.inter(color: textMediumEmphasis).copyWith(inherit: true),
+        labelLarge: GoogleFonts.inter(fontWeight: FontWeight.w600, color: textHighEmphasis).copyWith(inherit: true),
+        labelMedium: GoogleFonts.inter(fontWeight: FontWeight.w600, color: textMediumEmphasis).copyWith(inherit: true),
+        labelSmall: GoogleFonts.inter(fontWeight: FontWeight.w600, color: textLowEmphasis).copyWith(inherit: true),
+      ),
       appBarTheme: AppBarTheme(
-        backgroundColor: Colors.transparent,
+        backgroundColor: background,
         elevation: 0,
         centerTitle: true,
         scrolledUnderElevation: 0,
@@ -111,74 +80,76 @@ class AppTheme {
           fontSize: 20,
           fontWeight: FontWeight.bold,
           color: textHighEmphasis,
-        ),
+        ).copyWith(inherit: true),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: primary,
-          foregroundColor: Colors.white,
-          elevation: 8,
-          shadowColor: primary.withValues(alpha: 0.5),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+          backgroundColor: primaryLight,
+          foregroundColor: Colors.black, // Black text on white buttons for dark theme
+          elevation: 2,
+          shadowColor: Colors.black.withOpacity(0.3),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-          textStyle: GoogleFonts.outfit(
-            fontWeight: FontWeight.w600,
-            fontSize: 16,
-          ),
+          textStyle: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 16).copyWith(inherit: true),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: textHighEmphasis,
-          side: const BorderSide(color: borderOverlay, width: 1.5),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+          side: BorderSide(color: textMediumEmphasis.withOpacity(0.5), width: 1),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-          textStyle: GoogleFonts.outfit(
-            fontWeight: FontWeight.w600,
-            fontSize: 16,
-          ),
+          textStyle: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 16).copyWith(inherit: true),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: surface.withValues(alpha: 0.5),
-        hintStyle: GoogleFonts.inter(color: textMediumEmphasis),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 20,
-          vertical: 16,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: borderOverlay),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: borderOverlay),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: primary, width: 2),
-        ),
+        fillColor: surfaceLight, // Changed from surface to surfaceLight for contrast against pure black
+        hintStyle: GoogleFonts.inter(color: textMediumEmphasis, fontSize: 14).copyWith(inherit: true),
+        labelStyle: GoogleFonts.inter(color: textMediumEmphasis).copyWith(inherit: true),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: borderOverlay)),
+        errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.redAccent)),
         prefixIconColor: textMediumEmphasis,
+        suffixIconColor: textMediumEmphasis,
       ),
       cardTheme: CardThemeData(
         color: surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-          side: const BorderSide(color: borderOverlay, width: 1),
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: borderOverlay, width: 1),
         ),
       ),
       bottomSheetTheme: const BottomSheetThemeData(
-        backgroundColor: surface,
+        backgroundColor: background,
         elevation: 20,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
+      ),
+      dividerTheme: DividerThemeData(
+        space: 1,
+        thickness: 1,
+        color: textLowEmphasis.withOpacity(0.2),
+      ),
+      listTileTheme: ListTileThemeData(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+        titleTextStyle: GoogleFonts.inter(color: textHighEmphasis, fontWeight: FontWeight.w600, fontSize: 16).copyWith(inherit: true),
+        subtitleTextStyle: GoogleFonts.inter(color: textMediumEmphasis, fontSize: 14).copyWith(inherit: true),
+        iconColor: textMediumEmphasis,
+      ),
+      iconTheme: const IconThemeData(color: textMediumEmphasis),
+      primaryIconTheme: const IconThemeData(color: primaryLight),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: Colors.white,
+        contentTextStyle: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
+        actionTextColor: Colors.black87,
+        behavior: SnackBarBehavior.floating,
+        elevation: 6,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
@@ -204,65 +175,32 @@ class AppTheme {
       scaffoldBackgroundColor: lightBackground,
       colorScheme: const ColorScheme.light(
         primary: primary,
+        onPrimary: Colors.white,
         secondary: secondary,
+        onSecondary: Colors.white,
         tertiary: tertiary,
         surface: lightSurface,
         onSurface: lightTextHighEmphasis,
+        onSurfaceVariant: lightTextMediumEmphasis,
+        outline: Color(0xFFCBD5E1),
       ),
-      textTheme: GoogleFonts.interTextTheme(ThemeData.light().textTheme)
-          .copyWith(
-            displayLarge: GoogleFonts.outfit(
-              fontWeight: FontWeight.bold,
-              color: lightTextHighEmphasis,
-            ),
-            displayMedium: GoogleFonts.outfit(
-              fontWeight: FontWeight.bold,
-              color: lightTextHighEmphasis,
-            ),
-            displaySmall: GoogleFonts.outfit(
-              fontWeight: FontWeight.bold,
-              color: lightTextHighEmphasis,
-            ),
-            headlineLarge: GoogleFonts.outfit(
-              fontWeight: FontWeight.w700,
-              color: lightTextHighEmphasis,
-            ),
-            headlineMedium: GoogleFonts.outfit(
-              fontWeight: FontWeight.w700,
-              color: lightTextHighEmphasis,
-            ),
-            headlineSmall: GoogleFonts.outfit(
-              fontWeight: FontWeight.w700,
-              color: lightTextHighEmphasis,
-            ),
-            titleLarge: GoogleFonts.outfit(
-              fontWeight: FontWeight.w600,
-              color: lightTextHighEmphasis,
-            ),
-            titleMedium: GoogleFonts.outfit(
-              fontWeight: FontWeight.w600,
-              color: lightTextHighEmphasis,
-            ),
-            titleSmall: GoogleFonts.outfit(
-              fontWeight: FontWeight.w600,
-              color: lightTextHighEmphasis,
-            ),
-            bodyLarge: GoogleFonts.inter(color: lightTextHighEmphasis),
-            bodyMedium: GoogleFonts.inter(color: lightTextHighEmphasis),
-            bodySmall: GoogleFonts.inter(color: lightTextMediumEmphasis),
-            labelLarge: GoogleFonts.inter(
-              fontWeight: FontWeight.w600,
-              color: lightTextHighEmphasis,
-            ),
-            labelMedium: GoogleFonts.inter(
-              fontWeight: FontWeight.w600,
-              color: lightTextMediumEmphasis,
-            ),
-            labelSmall: GoogleFonts.inter(
-              fontWeight: FontWeight.w600,
-              color: lightTextMediumEmphasis,
-            ),
-          ),
+      textTheme: GoogleFonts.interTextTheme(ThemeData.light().textTheme).copyWith(
+        displayLarge: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: lightTextHighEmphasis).copyWith(inherit: true),
+        displayMedium: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: lightTextHighEmphasis).copyWith(inherit: true),
+        displaySmall: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: lightTextHighEmphasis).copyWith(inherit: true),
+        headlineLarge: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: lightTextHighEmphasis).copyWith(inherit: true),
+        headlineMedium: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: lightTextHighEmphasis).copyWith(inherit: true),
+        headlineSmall: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: lightTextHighEmphasis).copyWith(inherit: true),
+        titleLarge: GoogleFonts.outfit(fontWeight: FontWeight.w600, color: lightTextHighEmphasis).copyWith(inherit: true),
+        titleMedium: GoogleFonts.outfit(fontWeight: FontWeight.w600, color: lightTextHighEmphasis).copyWith(inherit: true),
+        titleSmall: GoogleFonts.outfit(fontWeight: FontWeight.w600, color: lightTextHighEmphasis).copyWith(inherit: true),
+        bodyLarge: GoogleFonts.inter(color: lightTextHighEmphasis).copyWith(inherit: true),
+        bodyMedium: GoogleFonts.inter(color: lightTextHighEmphasis).copyWith(inherit: true),
+        bodySmall: GoogleFonts.inter(color: lightTextMediumEmphasis).copyWith(inherit: true),
+        labelLarge: GoogleFonts.inter(fontWeight: FontWeight.w600, color: lightTextHighEmphasis).copyWith(inherit: true),
+        labelMedium: GoogleFonts.inter(fontWeight: FontWeight.w600, color: lightTextMediumEmphasis).copyWith(inherit: true),
+        labelSmall: GoogleFonts.inter(fontWeight: FontWeight.w600, color: lightTextMediumEmphasis).copyWith(inherit: true),
+      ),
       appBarTheme: AppBarTheme(
         backgroundColor: lightBackground,
         elevation: 0,
@@ -273,65 +211,44 @@ class AppTheme {
           fontSize: 20,
           fontWeight: FontWeight.bold,
           color: lightTextHighEmphasis,
-        ),
+        ).copyWith(inherit: true),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primary,
           foregroundColor: Colors.white,
-          elevation: 4,
-          shadowColor: primary.withValues(alpha: 0.3),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+          elevation: 2,
+          shadowColor: primary.withOpacity(0.3),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-          textStyle: GoogleFonts.outfit(
-            fontWeight: FontWeight.w600,
-            fontSize: 16,
-          ),
+          textStyle: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 16).copyWith(inherit: true),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: lightTextHighEmphasis,
           side: const BorderSide(color: lightBorderOverlay, width: 1.5),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-          textStyle: GoogleFonts.outfit(
-            fontWeight: FontWeight.w600,
-            fontSize: 16,
-          ),
+          textStyle: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 16).copyWith(inherit: true),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: lightSurfaceLight,
-        hintStyle: GoogleFonts.inter(color: lightTextMediumEmphasis),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 20,
-          vertical: 16,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: lightBorderOverlay),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: lightBorderOverlay),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: primary, width: 2),
-        ),
+        hintStyle: GoogleFonts.inter(color: lightTextMediumEmphasis).copyWith(inherit: true),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        border: InputBorder.none,
+        enabledBorder: InputBorder.none,
+        focusedBorder: InputBorder.none,
         prefixIconColor: lightTextMediumEmphasis,
       ),
       cardTheme: CardThemeData(
         color: lightSurface,
         elevation: 1,
+        shadowColor: Colors.black.withOpacity(0.05),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(16),
           side: const BorderSide(color: lightBorderOverlay, width: 1),
         ),
       ),
@@ -339,8 +256,14 @@ class AppTheme {
         backgroundColor: lightSurface,
         elevation: 20,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
+      ),
+      listTileTheme: ListTileThemeData(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+        titleTextStyle: GoogleFonts.inter(color: lightTextHighEmphasis, fontWeight: FontWeight.w600, fontSize: 16).copyWith(inherit: true),
+        subtitleTextStyle: GoogleFonts.inter(color: lightTextMediumEmphasis, fontSize: 14).copyWith(inherit: true),
+        iconColor: lightTextMediumEmphasis,
       ),
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
@@ -367,7 +290,7 @@ class AmbientGlow extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: RadialGradient(
-          colors: [color.withValues(alpha: 0.25), color.withValues(alpha: 0.0)],
+          colors: [color.withOpacity(0.25), color.withOpacity(0.0)],
           stops: const [0.1, 1.0],
         ),
       ),
@@ -394,7 +317,7 @@ class GlassContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var bRadius = borderRadius ?? BorderRadius.circular(24);
+    var bRadius = borderRadius ?? BorderRadius.circular(12);
     return Container(
       margin: margin,
       decoration: BoxDecoration(
@@ -403,7 +326,7 @@ class GlassContainer extends StatelessWidget {
         border: Border.all(color: context.border, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
+            color: Colors.black.withOpacity(0.15),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -431,17 +354,14 @@ extension ThemeColors on BuildContext {
   Color get surfaceLightColor =>
       isDark ? AppTheme.surfaceLight : AppTheme.lightSurfaceLight;
   Color get textHigh => Theme.of(this).colorScheme.onSurface;
-  Color get textMed =>
-      isDark ? AppTheme.textMediumEmphasis : AppTheme.lightTextMediumEmphasis;
-  Color get textLow =>
-      isDark ? AppTheme.textLowEmphasis : const Color(0xFF94A3B8);
-  Color get border =>
-      isDark ? AppTheme.borderOverlay : AppTheme.lightBorderOverlay;
+  Color get textMed => Theme.of(this).colorScheme.onSurfaceVariant;
+  Color get textLow => Theme.of(this).colorScheme.outline;
+  Color get border => isDark ? AppTheme.borderOverlay : AppTheme.lightBorderOverlay;
   Color get primary => Theme.of(this).colorScheme.primary;
   Color get onPrimary => Theme.of(this).colorScheme.onPrimary;
   Color get secondary => Theme.of(this).colorScheme.secondary;
   Color get accent => Theme.of(this).colorScheme.tertiary;
   Color get onAccent => Colors.white;
   Color get textSecondary => textMed;
-  Color get dividerColor => isDark ? border : Colors.grey.shade200;
+  Color get dividerColor => Theme.of(this).dividerTheme.color ?? (isDark ? border : Colors.grey.shade200);
 }

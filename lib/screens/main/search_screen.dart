@@ -12,10 +12,19 @@ import '../../widgets/user_avatar.dart';
 import 'user_profile_screen.dart';
 import '../../theme/app_theme.dart';
 import 'main_navigation.dart';
+import '../../widgets/post_card.dart';
+import '../../widgets/clean_text_field.dart';
 
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key});
+  final String? initialSearchQuery;
+
+  const SearchScreen({
+    super.key,
+    this.initialSearchQuery,
+  });
+
+  static final GlobalKey<_SearchScreenState> searchKey = GlobalKey<_SearchScreenState>();
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -41,11 +50,21 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
   String? _selectedRole;
   String? _selectedSkill;
   double _rangeKm = 25.0;
-
+  bool _isPostTab = true;
+  List<DocumentSnapshot> _allFetchedPosts = [];
+  List<DocumentSnapshot> _displayedPosts = [];
+  bool _isLoadingPosts = false;
+  final Set<String> _availableSkills = {'All Skills', 'Flutter', 'React Native', 'Node.js', 'Python', 'UI/UX', 'Dart', 'Javascript', 'Firebase', 'Java', 'Kotlin', 'Swift', 'C++', 'Go', 'Rust'};
+  final Set<String> _availableRoles = {'All Roles', 'Frontend Dev', 'Backend Dev', 'Full Stack', 'Designer', 'Product Manager', 'Data Scientist', 'DevOps', 'Mobile Dev', 'QA Engineer'};
 
   @override
   void initState() {
     super.initState();
+    if (widget.initialSearchQuery != null && widget.initialSearchQuery!.isNotEmpty) {
+      _searchController.text = widget.initialSearchQuery!;
+      _searchQuery = widget.initialSearchQuery!;
+      _isPostTab = true; // Hashtags usually lead to post discovery
+    }
     _searchController.addListener(_onSearchChanged);
     _initLocation();
   }
@@ -55,6 +74,15 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
+  }
+
+  void switchToListView() {
+    if (mounted) {
+      setState(() {
+        showMap = false;
+        _isPostTab = true; // Default to nearby posts in list view
+      });
+    }
   }
 
   void _onSearchChanged() {
@@ -88,20 +116,38 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
       // 3. Skill Filter
       if (_selectedSkill != null && _selectedSkill != 'All Skills') {
         final userSkills = List<String>.from(user['skills'] ?? []);
-        if (!userSkills.any((s) => s.toLowerCase() == _selectedSkill!.toLowerCase())) return false;
+        final bio = (user['bio'] as String? ?? '').toLowerCase();
+        final status = (user['status'] as String? ?? '').toLowerCase();
+        final role = (user['role'] as String? ?? '').toLowerCase();
+        
+        final normalizedFilter = _selectedSkill!.toLowerCase().replaceAll('_', ' ');
+        // Match in skills array OR anywhere else for flexibility
+        bool match = userSkills.any((s) => s.toLowerCase().replaceAll('_', ' ').contains(normalizedFilter)) ||
+                     bio.replaceAll('_', ' ').contains(normalizedFilter) ||
+                     status.replaceAll('_', ' ').contains(normalizedFilter) ||
+                     role.replaceAll('_', ' ').contains(normalizedFilter);
+        
+        if (!match) return false;
       }
 
       // 4. Search Query Filter
       if (query.isNotEmpty) {
         final name = (user['name'] as String? ?? '').toLowerCase();
         final username = (user['username'] as String? ?? '').toLowerCase();
-        final role = (user['role'] as String? ?? '').toLowerCase();
+        final roleStr = (user['role'] as String? ?? '').toLowerCase();
         final skills = List<String>.from(user['skills'] ?? []);
+        final rolesArray = List<String>.from(user['roles'] ?? []);
+        final bio = (user['bio'] as String? ?? '').toLowerCase();
+        final status = (user['status'] as String? ?? '').toLowerCase();
 
-        bool matches = name.contains(query) || 
-                      username.contains(query) || 
-                      role.contains(query) || 
-                      skills.any((s) => s.toLowerCase().contains(query));
+        final normalizedQuery = query.replaceAll('_', ' ');
+        bool matches = name.replaceAll('_', ' ').contains(normalizedQuery) || 
+                      username.replaceAll('_', ' ').contains(normalizedQuery) || 
+                      roleStr.replaceAll('_', ' ').contains(normalizedQuery) || 
+                      status.replaceAll('_', ' ').contains(normalizedQuery) ||
+                      bio.replaceAll('_', ' ').contains(normalizedQuery) ||
+                      skills.any((s) => s.toLowerCase().replaceAll('_', ' ').contains(normalizedQuery)) ||
+                      rolesArray.any((r) => r.toLowerCase().replaceAll('_', ' ').contains(normalizedQuery));
         if (!matches) return false;
       }
 
@@ -109,6 +155,33 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
     }).toList();
 
     setState(() => _displayedUsers = filtered);
+
+    final filteredPosts = _allFetchedPosts.where((doc) {
+      final data = doc.data() as Map<String, dynamic>;
+      final content = (data['content'] as String? ?? '').toLowerCase();
+      final authorName = (data['authorName'] as String? ?? '').toLowerCase();
+      
+      // 1. Tag Filters
+      final tags = List<String>.from(data['skills'] ?? [])..addAll(List<String>.from(data['roles'] ?? []));
+      if (_selectedSkill != null && _selectedSkill != 'All Skills') {
+        if (!tags.any((t) => t.toLowerCase().contains(_selectedSkill!.toLowerCase()))) return false;
+      }
+      
+      if (_selectedRole != null && _selectedRole != 'All Roles') {
+        if (!tags.any((t) => t.toLowerCase().contains(_selectedRole!.toLowerCase()))) return false;
+      }
+
+      // 2. Search Query
+      if (query.isNotEmpty) {
+        bool matches = content.contains(query) || 
+                       authorName.contains(query) || 
+                       tags.any((t) => t.toLowerCase().contains(query));
+        if (!matches) return false;
+      }
+      return true;
+    }).toList();
+
+    setState(() => _displayedPosts = filteredPosts);
   }
 
   Future<void> _initLocation() async {
@@ -247,6 +320,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
       }
 
       _fetchNearbyUsers();
+      _fetchNearbyPosts();
     } catch (e) {
       debugPrint('Location error: $e');
       _setFallbackLocation();
@@ -261,6 +335,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
       });
     }
     _fetchNearbyUsers();
+    _fetchNearbyPosts();
   }
 
   Future<void> _fetchNearbyUsers() async {
@@ -287,6 +362,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
           final userLng = (data['longitude'] as num).toDouble();
           final userLatLng = LatLng(userLat, userLng);
 
+          // Accurate distance calculation
           double distanceKm = 0;
           if (_userLocation != null) {
             distanceKm = _calculateDistance(
@@ -300,16 +376,58 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
           // Filter by range (0 = unlimited)
           if (_rangeKm > 0 && distanceKm > _rangeKm) continue;
 
+          // Advanced Jittering for overlapping locations
+          LatLng finalPosition = userLatLng;
+          int overlaps = 0;
+          for (var existing in users) {
+            // Check if coordinates are identical or extremely close
+            if ((existing['location'].latitude - userLat).abs() < 0.000001 &&
+                (existing['location'].longitude - userLng).abs() < 0.000001) {
+              overlaps++;
+            }
+          }
+
+          if (overlaps > 0) {
+            // Use a spiral pattern for jittering to keep markers distinct
+            // 0.00008 is roughly 8-10 meters, visible at most zoom levels
+            final double jitterAmount = 0.00008 * overlaps;
+            final double angle = overlaps * (2 * pi / 6); // Spiral distribution
+            finalPosition = LatLng(
+              userLat + (jitterAmount * sin(angle)),
+              userLng + (jitterAmount * cos(angle)),
+            );
+          }
+
+          // Combine role, status, bio for a more complete searchable role/description
+          String userRole = data['role'] ?? data['status'] ?? data['bio'] ?? 'Community Member';
+          if (data['roles'] is List) {
+            final rolesList = List<String>.from(data['roles']);
+            if (rolesList.isNotEmpty && userRole == 'Community Member') {
+              userRole = rolesList.first;
+            }
+          }
+
           users.add({
             'uid': doc.id,
             'name': data['name'] ?? 'Unknown',
             'username': data['username'] ?? '',
-            'role': data['bio'] ?? 'Developer',
+            'role': userRole,
+            'status': data['status'] ?? '',
+            'bio': data['bio'] ?? data['description'] ?? '',
             'skills': List<String>.from(data['skills'] ?? []),
-            'location': userLatLng,
+            'roles': List<String>.from(data['roles'] is List ? data['roles'] : (data['role'] != null ? [data['role']] : [])),
+            'location': finalPosition,
             'distanceKm': distanceKm,
             'profileImageUrl': data['profileImageUrl'],
           });
+
+          // Add to available filters
+          if (data['skills'] is List) {
+            _availableSkills.addAll(List<String>.from(data['skills']));
+          }
+          if (data['roles'] is List) {
+            _availableRoles.addAll(List<String>.from(data['roles']));
+          }
         }
       }
 
@@ -329,6 +447,67 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
       if (mounted) {
         setState(() => _isLoadingUsers = false);
       }
+    }
+  }
+
+  Future<void> _fetchNearbyPosts() async {
+    if (_userLocation == null) return;
+    setState(() => _isLoadingPosts = true);
+    
+    try {
+      // Use a more robust check for existence of coordinates
+      // Latitude is always between -90 and 90, so isGreaterThan: -91 is a safe way to find all numbers
+      final snapshot = await FirebaseFirestore.instance
+          .collection('posts')
+          .where('latitude', isGreaterThan: -91)
+          .get();
+
+      final List<Map<String, dynamic>> postsWithDistance = [];
+
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        if (data['latitude'] == null || data['longitude'] == null) continue;
+        
+        final postLat = (data['latitude'] as num).toDouble();
+        final postLng = (data['longitude'] as num).toDouble();
+
+        double distanceKm = _calculateDistance(
+          _userLocation!.latitude,
+          _userLocation!.longitude,
+          postLat,
+          postLng,
+        );
+
+        // Standard filter by range
+        if (_rangeKm > 0 && distanceKm > _rangeKm) continue;
+        
+        postsWithDistance.add({
+          'doc': doc,
+          'distanceKm': distanceKm,
+        });
+
+        // Add to available filters
+        if (data['skills'] is List) {
+          _availableSkills.addAll(List<String>.from(data['skills']));
+        }
+        if (data['roles'] is List) {
+          _availableRoles.addAll(List<String>.from(data['roles']));
+        }
+      }
+
+      // Sort by distance (closest first)
+      postsWithDistance.sort((a, b) => (a['distanceKm'] as double).compareTo(b['distanceKm'] as double));
+
+      if (mounted) {
+        setState(() {
+          _allFetchedPosts = postsWithDistance.map((p) => p['doc'] as DocumentSnapshot).toList();
+          _isLoadingPosts = false;
+        });
+        _applySearchFilter();
+      }
+    } catch (e) {
+      debugPrint('Error fetching nearby posts: $e');
+      if (mounted) setState(() => _isLoadingPosts = false);
     }
   }
 
@@ -368,7 +547,9 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
         children: [
           // Content (Map or List)
           Positioned.fill(
-            child: showMap ? _buildMap() : _buildUserList(),
+            child: showMap 
+                ? _buildMap() 
+                : (_isPostTab ? _buildPostList() : _buildUserList()),
           ),
 
           // Top Elevation/Search Bar
@@ -378,164 +559,164 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
             right: 0,
             child: Container(
               padding: EdgeInsets.only(
-                top: MediaQuery.of(context).padding.top + 16,
-                left: 16,
-                right: 16,
-                bottom: 16,
+                top: MediaQuery.of(context).padding.top + 8,
+                bottom: 4,
               ),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    context.bg,
-                    context.bg.withValues(alpha: 0.9),
-                    context.bg.withValues(alpha: 0.0),
-                  ],
-                  stops: const [0.0, 0.7, 1.0],
-                ),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: context.surfaceColor,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [],
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Row(
-                            children: [
-                              Icon(Icons.search_rounded, color: context.primary, size: 20),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: TextField(
-                                  controller: _searchController,
-                                  style: TextStyle(color: context.textHigh, fontSize: 15, fontWeight: FontWeight.w500),
-                                    decoration: InputDecoration(
-                                      hintText: context.t('discover'),
-                                      hintStyle: TextStyle(color: context.textLow, fontSize: 15, fontWeight: FontWeight.w400),
-                                      border: InputBorder.none,
-                                      enabledBorder: InputBorder.none,
-                                      focusedBorder: InputBorder.none,
-                                      isDense: true,
-                                      contentPadding: EdgeInsets.zero,
-                                    ),
-                                ),
-                              ),
-                              if (_searchQuery.isNotEmpty)
-                                GestureDetector(
-                                  onTap: () {
-                                    _searchController.clear();
-                                    // _onSearchChanged will be called automatically due to the listener
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.all(4),
-                                    decoration: BoxDecoration(
-                                      color: context.textLow.withValues(alpha: 0.1),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(Icons.close_rounded, size: 14, color: context.textMed),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      GestureDetector(
-                        onTap: () => setState(() => showMap = !showMap),
-                        child: Container(
-                          height: 48,
-                          width: 48,
-                          decoration: BoxDecoration(
-                            color: context.primary,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: context.primary.withValues(alpha: 0.3),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Icon(
-                            showMap ? Icons.list_rounded : Icons.map_rounded,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    child: Row(
-                      children: [
-                        _buildFilterChip(
-                          _selectedSkill ?? context.t('skills'), 
-                          _selectedSkill != null,
-                          onTap: () => _showFilterOptions('Skills', ['All Skills', 'Flutter', 'React Native', 'Node.js', 'Python', 'UI/UX', 'Dart', 'Javascript']),
-                        ),
-                        _buildFilterChip(
-                          _rangeKm == 0 ? context.t('unlimited') : '${_rangeKm.toInt()} km', 
-                          _rangeKm < 100 && _rangeKm > 0,
-                          onTap: () => _showFilterOptions('Range', ['5 km', '10 km', '25 km', '50 km', '100 km', 'Unlimited']),
-                        ),
-                        _buildFilterChip(
-                          _selectedRole ?? context.t('roles'), 
-                          _selectedRole != null,
-                          onTap: () => _showFilterOptions('Role', ['All Roles', 'Frontend Dev', 'Backend Dev', 'Full Stack', 'Designer', 'Product Manager']),
-                        ),
-                      ],
-                    ),
+                color: context.surfaceColor,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
-            ),
-          ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Row(
+                        children: [
+                          if (Navigator.canPop(context))
+                            Padding(
+                              padding: const EdgeInsets.only(right: 12),
+                              child: IconButton(
+                                onPressed: () => Navigator.pop(context),
+                                icon: Icon(Icons.arrow_back_rounded, color: context.textHigh),
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                              ),
+                            ),
+                          Expanded(
+                            child: CleanTextField(
+                                controller: _searchController,
+                                hintText: 'Search skills, roles, or users...',
+                                prefixIcon: Icons.search_rounded,
+                                suffixIcon: _searchQuery.isNotEmpty ? Icons.close_rounded : null,
+                                onSuffixTap: () => _searchController.clear(),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          GestureDetector(
+                            onTap: () => setState(() => showMap = !showMap),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: context.primary.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                showMap ? Icons.view_list_rounded : Icons.map_rounded,
+                                color: context.primary,
+                                size: 18,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                  ),
+                  const SizedBox(height: 4),
+                        Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            physics: const BouncingScrollPhysics(),
+                            child: Row(
+                              children: [
+                                 _buildFilterChip(
+                                  _selectedSkill ?? context.t('skills'), 
+                                  _selectedSkill != null,
+                                  icon: Icons.auto_awesome_rounded,
+                                  onTap: () => _showFilterOptions('Skills', _availableSkills.toList()),
+                                ),
+                                _buildFilterChip(
+                                  _rangeKm == 0 ? context.t('unlimited') : '${_rangeKm.toInt()} km', 
+                                  _rangeKm < 100 && _rangeKm > 0,
+                                  onTap: () => _showFilterOptions('Range', ['5 km', '10 km', '25 km', '50 km', '100 km', 'Unlimited']),
+                                ),
+                                _buildFilterChip(
+                                  _selectedRole ?? context.t('roles'), 
+                                  _selectedRole != null,
+                                  onTap: () => _showFilterOptions('Role', _availableRoles.toList()),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        if (!showMap) ...[
+                          _buildToggleSlider(),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
 
           // User count badge (visible only on Map)
           if (showMap)
             Positioned(
-              bottom: 20,
+              bottom: 25,
               left: 20,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: context.surfaceColor,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: context.border),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 10,
+              child: GestureDetector(
+                onTap: () => setState(() => showMap = false),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [context.surfaceColor, context.surfaceColor.withOpacity(0.95)],
                     ),
-                  ],
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.people_rounded,
-                      color: context.primary,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${_displayedUsers.length} ${_searchQuery.isNotEmpty ? context.t('matched') : context.t('nearby')}',
-                      style: TextStyle(
-                        color: context.textHigh,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: context.primary.withOpacity(0.2)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.12),
+                        blurRadius: 15,
+                        offset: const Offset(0, 4),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: context.primary.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.format_list_bulleted_rounded,
+                          color: context.primary,
+                          size: 18,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${_displayedUsers.length} ${_searchQuery.isNotEmpty ? context.t('matched') : (_rangeKm > 25.0 || _rangeKm == 0 ? context.t('in_range') : context.t('nearby'))}',
+                            style: TextStyle(
+                              color: context.textHigh,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
+                          Text(
+                             context.t('view list'),
+                            style: TextStyle(
+                              color: context.primary,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -591,7 +772,6 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                             Container(
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                border: Border.all(color: context.bg, width: 3),
                                 boxShadow: [
                                   BoxShadow(
                                     color: context.accent.withOpacity(0.5),
@@ -650,13 +830,9 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                               Container(
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: context.bg,
-                                    width: 3,
-                                  ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black45.withValues(alpha: 0.5),
+                                      color: Colors.black45.withOpacity(0.5),
                                       blurRadius: 4,
                                       offset: const Offset(0, 2),
                                     ),
@@ -664,7 +840,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                                   gradient: LinearGradient(
                                     colors: [
                                       context.primary,
-                                      context.primary.withValues(alpha: 0.7),
+                                      context.primary.withOpacity(0.7),
                                     ],
                                   ),
                                 ),
@@ -681,7 +857,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                                   vertical: 2,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: context.textHigh.withValues(alpha: 0.7),
+                                  color: context.textHigh.withOpacity(0.7),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
@@ -703,44 +879,6 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                   ],
                 ),
               ],
-            ),
-          ),
-          // User count badge
-          Positioned(
-            bottom: 20,
-            left: 20,
-            child: Container(
-              decoration: BoxDecoration(
-                color: context.surfaceColor,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: context.border),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 10,
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                   Icon(
-                    Icons.people_rounded,
-                    color: context.primary,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '${_displayedUsers.length} ${_searchQuery.isNotEmpty ? context.t('matched') : context.t('nearby')}',
-                    style: TextStyle(
-                      color: context.textHigh,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
             ),
           ),
           // My location button
@@ -780,16 +918,18 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: context.surfaceColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
       builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
+        return SingleChildScrollView(
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
               Container(
                 width: 40,
                 height: 4,
@@ -799,69 +939,80 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                 ),
               ),
               const SizedBox(height: 24),
-              Row(
-                children: [
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        colors: [context.primary, context.primary.withValues(alpha: 0.7)],
+              GestureDetector(
+                onTap: () {
+                  Navigator.pop(context); // Close bottom sheet
+                  Navigator.push(
+                    this.context, // Use screen context
+                    MaterialPageRoute(
+                      builder: (context) => UserProfileScreen(userId: user['uid']),
+                    ),
+                  );
+                },
+                child: Row(
+                  children: [
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [context.primary, context.primary.withOpacity(0.7)],
+                        ),
+                      ),
+                      child: UserAvatar(
+                        imageUrl: user['profileImageUrl'],
+                        name: user['name'] ?? '?',
+                        radius: 30,
                       ),
                     ),
-                    child: UserAvatar(
-                      imageUrl: user['profileImageUrl'],
-                      name: user['name'] ?? '?',
-                      radius: 30,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          user['name'] ?? 'User',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: context.textHigh,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '@${user['username']}',
-                          style: TextStyle(
-                            color: context.textSecondary,
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.location_on_outlined,
-                              size: 14,
-                              color: context.accent,
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            user['name'] ?? 'User',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: context.textHigh,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
                             ),
-                            const SizedBox(width: 4),
-                            Text(
-                              distanceStr,
-                              style: TextStyle(
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '@${user['username']}',
+                            style: TextStyle(
+                              color: context.textSecondary,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.location_on_outlined,
+                                size: 14,
                                 color: context.accent,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
+                              const SizedBox(width: 4),
+                              Text(
+                                distanceStr,
+                                style: TextStyle(
+                                  color: context.accent,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               const SizedBox(height: 16),
               if (user['role'] != null)
@@ -890,14 +1041,9 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                       ),
                       decoration: BoxDecoration(
                         color: isMatched
-                            ? context.primary.withValues(alpha: 0.2)
+                            ? context.primary.withOpacity(0.2)
                             : context.surfaceColor,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isMatched
-                              ? context.primary
-                              : context.border,
-                        ),
                       ),
                       child: Text(
                         skill,
@@ -936,7 +1082,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: OutlinedButton.icon(
+                    child: ElevatedButton.icon(
                       onPressed: () {
                         Navigator.pop(context);
                         Navigator.push(
@@ -946,9 +1092,10 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                           ),
                         );
                       },
-                      style: OutlinedButton.styleFrom(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: context.primary.withOpacity(0.1),
                         foregroundColor: context.primary,
-                        side: BorderSide(color: context.primary),
+                        elevation: 0,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -963,7 +1110,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
               const SizedBox(height: 16),
             ],
           ),
-        );
+        ),);
       },
     );
   }
@@ -989,161 +1136,324 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
         ),
       );
     }
-    return ListView.builder(
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 130,
-        left: 16,
-        right: 16,
-        bottom: 100,
-      ),
-      itemCount: _displayedUsers.length,
-      physics: const BouncingScrollPhysics(),
-      itemBuilder: (context, index) {
-        final user = _displayedUsers[index];
-        final distance = user['distanceKm'] as double;
-        final distanceStr = distance < 1
-            ? '${(distance * 1000).toInt()} m'
-            : '${distance.toStringAsFixed(1)} km';
-        final skills = List<String>.from(user['skills'] ?? []);
+    return RefreshIndicator(
+      onRefresh: _fetchNearbyUsers,
+      displacement: MediaQuery.of(context).padding.top + 100,
+      color: context.primary,
+      backgroundColor: context.surfaceColor,
+      child: ListView.builder(
+        padding: EdgeInsets.only(
+          top: MediaQuery.of(context).padding.top + 215,
+          bottom: 120,
+        ),
+        itemCount: _displayedUsers.length,
+        physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+        itemBuilder: (context, index) {
+          final user = _displayedUsers[index];
+          final distance = user['distanceKm'] as double;
+          final distanceStr = distance < 1
+              ? '${(distance * 1000).toInt()} m'
+              : '${distance.toStringAsFixed(1)} km';
 
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: context.border),
-          ),
-          child: InkWell(
-            onTap: () => _showUserBottomSheet(user),
-            borderRadius: BorderRadius.circular(16),
+          return InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => UserProfileScreen(userId: user['uid'] ?? '')),
+              );
+            },
             child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
                 children: [
-                  Row(
-                    children: [
-                      UserAvatar(
-                        imageUrl: user['profileImageUrl'],
-                        name: user['name'] ?? '?',
-                        radius: 25,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                  UserAvatar(
+                    imageUrl: user['profileImageUrl'],
+                    name: user['name'] ?? '?',
+                    radius: 28,
+                  ),
+                  const SizedBox(width: 14),
+                  // User Info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
                           children: [
-                            Text(
-                              user['name'] ?? 'Unknown',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                color: context.textHigh,
+                            Flexible(
+                              child: Text(
+                                '@${user['username']}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: context.textHigh,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  letterSpacing: -0.2,
+                                ),
                               ),
                             ),
-                            Text(
-                              '@${user['username']}',
-                              style: TextStyle(
-                                color: context.textSecondary,
-                                fontSize: 13,
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: context.primary.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                distanceStr,
+                                style: TextStyle(
+                                  color: context.primary,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 10,
+                                ),
                               ),
                             ),
                           ],
                         ),
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.location_on, size: 14, color: context.accent),
-                              const SizedBox(width: 4),
-                              Text(
-                                distanceStr,
-                                style: TextStyle(
-                                  color: context.accent,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
+                        const SizedBox(height: 1),
+                        Text(
+                          user['name'] ?? '',
+                          style: TextStyle(
+                            color: context.textMed,
+                            fontSize: 12,
                           ),
-                          const SizedBox(height: 4),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (user['role'] != null && user['role'].toString().isNotEmpty) ...[
+                          const SizedBox(height: 2),
                           Text(
-                            user['role'] ?? '',
+                            user['role'],
                             style: TextStyle(
-                              color: context.textSecondary,
+                              color: context.primary.withOpacity(0.8),
                               fontSize: 11,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                  if (skills.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: skills.take(3).map((skill) {
-                           final isMatched = _searchQuery.isNotEmpty &&
-                        skill.toLowerCase().contains(_searchQuery);
-                          return Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: isMatched ? context.primary.withValues(alpha: 0.1) : context.surfaceColor,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              skill,
-                              style: TextStyle(
-                                color: isMatched ? context.primary : context.textSecondary,
-                                fontSize: 10,
-                                fontWeight: isMatched ? FontWeight.w600 : FontWeight.normal,
-                              ),
-                            ),
-                          );
-                        }).toList(),
+                  const SizedBox(width: 8),
+                  // View Button
+                  SizedBox(
+                    height: 32,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => UserProfileScreen(userId: user['uid'] ?? '')),
+                        );
+                      },
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        side: BorderSide(color: context.border, width: 1),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        'View',
+                        style: TextStyle(
+                          color: context.textHigh,
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                  ],
+                  ),
+                  const SizedBox(width: 10),
+                  IconButton(
+                    icon: Icon(Icons.more_vert, color: context.textHigh, size: 20),
+                    onPressed: () => _showUserOptions(user),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
                 ],
               ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
-  Widget _buildFilterChip(String label, bool isActive, {VoidCallback? onTap}) {
+  Widget _buildPostList() {
+    if (_isLoadingPosts) {
+      return Center(child: CircularProgressIndicator(color: context.primary));
+    }
+    if (_displayedPosts.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.post_add_rounded, size: 60, color: context.textSecondary),
+            const SizedBox(height: 16),
+            Text(
+              _searchQuery.isNotEmpty 
+                  ? 'No posts found with "$_searchQuery"' 
+                  : 'No posts found ${_rangeKm > 25.0 || _rangeKm == 0 ? context.t('in_range') : context.t('nearby')}',
+              style: TextStyle(color: context.textSecondary, fontSize: 16),
+            ),
+          ],
+        ),
+      );
+    }
+    return RefreshIndicator(
+      onRefresh: _fetchNearbyPosts,
+      displacement: MediaQuery.of(context).padding.top + 100,
+      color: context.primary,
+      backgroundColor: context.surfaceColor,
+      child: ListView.builder(
+        padding: EdgeInsets.only(
+          top: MediaQuery.of(context).padding.top + 215,
+          bottom: 120,
+        ),
+        itemCount: _displayedPosts.length,
+        physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+        itemBuilder: (context, index) {
+          return PostCard(doc: _displayedPosts[index], isClickable: true);
+        },
+      ),
+    );
+  }
+
+  Widget _buildToggleSlider() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+      height: 44,
+      decoration: BoxDecoration(
+        color: context.surfaceLightColor,
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Stack(
+        children: [
+          AnimatedAlign(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.fastOutSlowIn,
+            alignment: _isPostTab ? Alignment.centerRight : Alignment.centerLeft,
+            child: FractionallySizedBox(
+              widthFactor: 0.5,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: context.primary,
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: [
+                    BoxShadow(color: context.primary.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 2)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => _isPostTab = false),
+                  behavior: HitTestBehavior.opaque,
+                  child: Center(
+                    child: AnimatedDefaultTextStyle(
+                      duration: const Duration(milliseconds: 200),
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        color: !_isPostTab ? Colors.white : context.textMed,
+                        fontWeight: !_isPostTab ? FontWeight.w700 : FontWeight.w500,
+                        fontSize: 14,
+                      ),
+                      child: const Text('Nearby People'),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => _isPostTab = true),
+                  behavior: HitTestBehavior.opaque,
+                  child: Center(
+                    child: AnimatedDefaultTextStyle(
+                      duration: const Duration(milliseconds: 200),
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        color: _isPostTab ? Colors.white : context.textMed,
+                        fontWeight: _isPostTab ? FontWeight.w700 : FontWeight.w500,
+                        fontSize: 14,
+                      ),
+                      child: const Text('Nearby Posts'),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showUserOptions(Map<String, dynamic> user) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: context.surfaceLightColor,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: context.isDark ? Colors.white10 : Colors.black12,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 12),
+          ListTile(
+            leading: Icon(Icons.share_outlined, color: context.textHigh),
+            title: Text('Share this profile', style: TextStyle(color: context.textHigh)),
+            onTap: () => Navigator.pop(context),
+          ),
+          ListTile(
+            leading: const Icon(Icons.report_problem_outlined, color: Colors.redAccent),
+            title: const Text('Report', style: TextStyle(color: Colors.redAccent)),
+            onTap: () => Navigator.pop(context),
+          ),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(String label, bool isActive, {IconData? icon, VoidCallback? onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(right: 10),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: isActive ? context.primary : context.surfaceColor,
-          borderRadius: BorderRadius.circular(12),
+          color: isActive ? context.primary.withOpacity(0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isActive ? context.primary : context.border,
+            color: isActive ? context.primary : context.border.withOpacity(0.5),
+            width: 1,
           ),
-          boxShadow: isActive ? [
-             BoxShadow(
-              color: context.primary.withValues(alpha: 0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            )
-          ] : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (icon != null) ...[
+              Icon(
+                icon,
+                size: 14,
+                color: isActive ? context.primary : context.textSecondary,
+              ),
+              const SizedBox(width: 6),
+            ],
             Text(
               label,
               style: TextStyle(
-                color: isActive ? context.onPrimary : context.textHigh,
+                color: isActive ? context.primary : context.textHigh,
                 fontSize: 13,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
               ),
@@ -1152,7 +1462,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
             Icon(
               Icons.keyboard_arrow_down_rounded,
               size: 16,
-              color: isActive ? context.onPrimary : context.textSecondary,
+              color: isActive ? context.primary : context.textSecondary,
             ),
           ],
         ),
@@ -1166,6 +1476,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) {
+        String filterSearchQuery = '';
         return StatefulBuilder(
           builder: (context, setModalState) {
             String title = '';
@@ -1177,16 +1488,43 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
               title = context.t('roles');
             }
 
+            final normalizedSearch = filterSearchQuery.toLowerCase().replaceAll('_', ' ');
+            final filteredOptions = options.where((opt) {
+              final normalizedOpt = opt.toLowerCase().replaceAll('_', ' ');
+              return normalizedOpt.contains(normalizedSearch);
+            }).toList();
+            
+            // Allow adding any search query as a custom option
+            bool showAddCustom = type != 'Range' && 
+                                filterSearchQuery.isNotEmpty && 
+                                !options.any((opt) => opt.toLowerCase().replaceAll('_', ' ') == filterSearchQuery.toLowerCase().replaceAll('_', ' '));
+            
+            if (showAddCustom) {
+               // Put it at the top so it's easy to select
+               filteredOptions.insert(0, filterSearchQuery);
+            }
+
             return Container(
-              height: MediaQuery.of(context).size.height * 0.7,
+              height: MediaQuery.of(context).size.height * 0.75,
               decoration: BoxDecoration(
                 color: context.surfaceColor,
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: context.border,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -1206,25 +1544,39 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                             if (type == 'Role') _selectedRole = null;
                             _applySearchFilter();
                           });
-                          setModalState(() {});
+                          setModalState(() {
+                             filterSearchQuery = '';
+                          });
                         },
                         child: Text(
                           context.t('reset'), 
                           style: const TextStyle(
-                            color: Colors.red,
+                            color: Colors.redAccent,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
                     ],
                   ),
+                  if (type != 'Range') ...[
+                    const SizedBox(height: 16),
+                    CleanTextField(
+                      hintText: 'Search $title...',
+                      prefixIcon: Icons.search_rounded,
+                      onChanged: (val) {
+                        setModalState(() {
+                          filterSearchQuery = val.trim();
+                        });
+                      },
+                    ),
+                  ],
                   const SizedBox(height: 20),
                   Expanded(
                     child: ListView.builder(
-                      itemCount: options.length,
+                      itemCount: filteredOptions.length,
                       physics: const BouncingScrollPhysics(),
                       itemBuilder: (context, index) {
-                        String option = options[index];
+                        String option = filteredOptions[index];
                         bool isSelected = false;
                         
                         if (type == 'Skills') {
@@ -1253,6 +1605,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                                   _rangeKm = double.tryParse(option.split(' ')[0]) ?? 25.0;
                                 }
                                 _fetchNearbyUsers();
+                                _fetchNearbyPosts();
                               }
                               _applySearchFilter();
                             });
@@ -1262,25 +1615,36 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                             margin: const EdgeInsets.only(bottom: 12),
                             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                             decoration: BoxDecoration(
-                              color: isSelected ? context.primary.withValues(alpha: 0.05) : context.surfaceLightColor,
+                              color: isSelected ? context.primary.withOpacity(0.1) : context.surfaceLightColor,
                               borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: isSelected ? context.primary : context.border,
-                                width: isSelected ? 2 : 1,
-                              ),
+                              border: isSelected ? Border.all(color: context.primary.withOpacity(0.3)) : null,
                             ),
                             child: Row(
                               children: [
+                                if (showAddCustom && index == 0 && option == filterSearchQuery)
+                                   Padding(
+                                     padding: const EdgeInsets.only(right: 12),
+                                     child: Icon(Icons.add_circle_outline_rounded, color: context.primary, size: 20),
+                                   ),
                                 Expanded(
                                   child: Text(
-                                    option == 'Unlimited' ? context.t('unlimited') : option,
+                                    option == 'Unlimited' ? context.t('View full map') : option,
                                     style: TextStyle(
-                                      color: isSelected ? context.primary : context.textHigh,
-                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                      color: isSelected ? context.primary : (showAddCustom && index == 0 && option == filterSearchQuery ? context.primary : context.textHigh),
+                                      fontWeight: isSelected || (showAddCustom && index == 0 && option == filterSearchQuery) ? FontWeight.bold : FontWeight.normal,
                                       fontSize: 16,
                                     ),
                                   ),
                                 ),
+                                if (showAddCustom && index == 0 && option == filterSearchQuery)
+                                   Text(
+                                     'Custom',
+                                     style: TextStyle(
+                                       color: context.textLow,
+                                       fontSize: 12,
+                                       fontWeight: FontWeight.normal,
+                                     ),
+                                   ),
                                 if (isSelected)
                                   Icon(Icons.check_circle_rounded, color: context.primary),
                               ],
@@ -1297,8 +1661,8 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                     child: ElevatedButton(
                       onPressed: () => Navigator.pop(context),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0F2F6A),
-                        foregroundColor: Colors.white,
+                        backgroundColor: context.primary,
+                        foregroundColor: context.onPrimary,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         elevation: 0,
                       ),

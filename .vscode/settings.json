@@ -1,3 +1,6 @@
 {
-    "cmake.sourceDirectory": "C:/Users/vinod/Downloads/final_feednative/final_feednative/feed_native/feed_flutter/windows/runner"
+    "cmake.sourceDirectory":  "C:/Users/vinod/Downloads/final_feednative/final_feednative/feed_native/feed_flutter/windows/runner",
+    "java.configuration.updateBuildConfiguration":  "automatic",
+    "java.gradle.buildServer.enabled":  "off",
+    "gradle.nestedProjects":  false
 }

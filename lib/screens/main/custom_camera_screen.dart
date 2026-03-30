@@ -20,11 +20,11 @@ class _CustomCameraScreenState extends State<CustomCameraScreen> {
 
   final List<Map<String, dynamic>> _filters = [
     {'name': 'Natural', 'color': Colors.transparent},
-    {'name': 'Vintage', 'color': const Color(0xFF704214).withValues(alpha: 0.2)},
-    {'name': 'Warm', 'color': Colors.orange.withValues(alpha: 0.15)},
-    {'name': 'Cool', 'color': Colors.blue.withValues(alpha: 0.1)},
-    {'name': 'Pink', 'color': Colors.pink.withValues(alpha: 0.1)},
-    {'name': 'Golden', 'color': Colors.amber.withValues(alpha: 0.2)},
+    {'name': 'Vintage', 'color': const Color(0xFF704214).withOpacity(0.2)},
+    {'name': 'Warm', 'color': Colors.orange.withOpacity(0.15)},
+    {'name': 'Cool', 'color': Colors.blue.withOpacity(0.1)},
+    {'name': 'Pink', 'color': Colors.pink.withOpacity(0.1)},
+    {'name': 'Golden', 'color': Colors.amber.withOpacity(0.2)},
   ];
 
   @override
@@ -247,7 +247,7 @@ class _CustomCameraScreenState extends State<CustomCameraScreen> {
                                             ? [
                                                 BoxShadow(
                                                   color: context.primary
-                                                      .withValues(alpha: 0.3),
+                                                      .withOpacity(0.3),
                                                   blurRadius: 10,
                                                   spreadRadius: 2,
                                                 ),
@@ -262,7 +262,7 @@ class _CustomCameraScreenState extends State<CustomCameraScreen> {
                                                 size: 20,
                                               )
                                             : Container(
-                                                color: f['color'].withValues(alpha: 1.0),
+                                                color: f['color'].withOpacity(1.0),
                                               ),
                                       ),
                                     ),
@@ -368,7 +368,7 @@ class _CustomCameraScreenState extends State<CustomCameraScreen> {
         height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: isActive ? context.primary.withValues(alpha: 0.3) : Colors.white10,
+          color: isActive ? context.primary.withOpacity(0.3) : Colors.white10,
           border: Border.all(
             color: isActive ? context.primary : Colors.white24,
             width: 1,

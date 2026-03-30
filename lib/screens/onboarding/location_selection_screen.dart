@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:geolocator/geolocator.dart';
+import '../../theme/app_theme.dart';
 
 class LocationSelectionScreen extends StatefulWidget {
   const LocationSelectionScreen({super.key});
@@ -61,7 +62,7 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.bg,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(32.0),
@@ -73,31 +74,31 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                 width: 120,
                 height: 120,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0F2F6A).withValues(alpha: 0.05),
+                  color: context.primary.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.location_on_rounded,
                   size: 60,
-                  color: Color(0xFF0F2F6A),
+                  color: context.primary,
                 ),
               ),
               const SizedBox(height: 40),
-              const Text(
+              Text(
                 'Enable Location',
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF0F2F6A),
+                  color: context.textHigh,
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'To show you skills and people around you, we need access to your location.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16,
-                  color: Color(0xFF71717A),
+                  color: context.textMed,
                   height: 1.5,
                 ),
               ),
@@ -108,7 +109,7 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _getCurrentLocation,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0F2F6A),
+                    backgroundColor: context.primary,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
@@ -130,10 +131,10 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
               const SizedBox(height: 12),
               TextButton(
                 onPressed: _skipLocation,
-                child: const Text(
+                child: Text(
                   'Maybe Later',
                   style: TextStyle(
-                    color: Color(0xFFA1A1AA),
+                    color: context.textLow,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),

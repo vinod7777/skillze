@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../widgets/user_avatar.dart';
+import '../../utils/avatar_helper.dart';
 
 import '../../theme/app_theme.dart';
 import '../../services/localization_service.dart';
 import '../../services/push_notification_service.dart';
 import 'post_detail_screen.dart';
+import 'user_profile_screen.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -50,13 +52,29 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
               child: Row(
                 children: [
-                  GestureDetector(
+                   GestureDetector(
                     onTap: () => Navigator.pop(context),
                     child: Icon(
                       Icons.arrow_back_ios_new_rounded,
                       size: 20,
                       color: context.textHigh,
                     ),
+                  ),
+                  const SizedBox(width: 12),
+                  // User Profile for context
+                  StreamBuilder<DocumentSnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(FirebaseAuth.instance.currentUser?.uid)
+                        .snapshots(),
+                    builder: (context, userSnap) {
+                      final userData = userSnap.data?.data() as Map<String, dynamic>?;
+                      return UserAvatar(
+                        imageUrl: AvatarHelper.getAvatarUrl(userData),
+                        name: userData?['name'] ?? '',
+                        radius: 14,
+                      );
+                    },
                   ),
                   Expanded(
                     child: Text(
@@ -93,7 +111,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             border: Border.all(color: context.bg, width: 2),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
+                                color: Colors.black.withOpacity(0.1),
                                 blurRadius: 4,
                                 offset: const Offset(0, 2),
                               ),
@@ -111,10 +129,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             // Notifications list
             Expanded(
               child: currentUser == null
-                  ? const Center(
+                  ?  Center(
                       child: Text(
                         'Please log in',
-                        style: TextStyle(color: Color(0xFF71717A)),
+                        style: TextStyle(color: context.textLow),
                       ),
                     )
                   : StreamBuilder<QuerySnapshot>(
@@ -133,9 +151,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             ),
                           );
                         }
-                        if (snapshot.hasError ||
-                            !snapshot.hasData ||
-                            snapshot.data!.docs.isEmpty) {
+                        if (snapshot.hasError) {
+                          return Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(24.0),
+                              child: Text(
+                                'Error loading notifications: ${snapshot.error}',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: Colors.redAccent.withOpacity(0.8)),
+                              ),
+                            ),
+                          );
+                        }
+                        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                           return Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -276,7 +304,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final message = data['message'] ?? '';
     final timestamp = data['timestamp'] as Timestamp?;
     final isRead = data['isRead'] ?? false;
-    final actorPhoto = data['actorPhoto'] as String?;
     final isClassRequest = type == 'class_request';
 
     String timeAgo = '';
@@ -302,7 +329,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           await doc.reference.update({'isRead': true});
         }
         final postId = data['postId'] as String?;
-        if (postId != null && postId.isNotEmpty && context.mounted) {
+        final actorId = data['actorId'] as String?;
+        
+        if (type == 'follow' && actorId != null && context.mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => UserProfileScreen(userId: actorId)),
+          );
+        } else if (postId != null && postId.isNotEmpty && context.mounted) {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => PostDetailScreen(postId: postId)),
@@ -317,7 +351,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: showUnreadDot
-                ? context.primary.withValues(alpha: 0.15)
+                ? context.primary.withOpacity(0.15)
                 : context.border,
           ),
         ),
@@ -328,24 +362,34 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Avatar or icon
-              StreamBuilder<DocumentSnapshot>(
-                stream: FirebaseFirestore.instance.collection('users').doc(data['actorId']).snapshots(),
-                builder: (context, userSnap) {
-                  final userData = userSnap.data?.data() as Map<String, dynamic>?;
-                  final displayAvatar = userData?['profileImageUrl'] ?? 
-                                      userData?['authorProfileImageUrl'] ?? 
-                                      userData?['photoUrl'] ?? 
-                                      userData?['authorAvatar'] ?? 
-                                      actorPhoto;
-                  final displayName = userData?['name'] ?? actorName;
-
-                  return UserAvatar(
-                    imageUrl: displayAvatar,
-                    name: displayName,
-                    radius: 22,
-                  );
-                },
-              ),
+              Stack(
+                children: [
+                UserAvatar(
+                  imageUrl: AvatarHelper.getAvatarUrl(data),
+                  name: actorName,
+                  radius: 22,
+                ),
+                Positioned(
+                  right: -2,
+                  bottom: -2,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: context.surfaceColor,
+                      shape: BoxShape.circle,
+                    ),
+                    child: ClipOval(
+                      child: Image.asset(
+                        'assets/logo.png',
+                        width: 14,
+                        height: 14,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
@@ -360,25 +404,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         ),
                         children: [
                           TextSpan(
-                            text: data['actorId'] != null ? '' : actorName, // We'll use StreamBuilder for the name too
-                          ),
-                          WidgetSpan(
-                            child: StreamBuilder<DocumentSnapshot>(
-                              stream: FirebaseFirestore.instance.collection('users').doc(data['actorId']).snapshots(),
-                              builder: (context, userSnap) {
-                                final userData = userSnap.data?.data() as Map<String, dynamic>?;
-                                final displayName = userData?['name'] ?? actorName;
-                                return Text(
-                                  displayName,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                    color: context.textHigh,
-                                  ),
-                                );
-                              },
+                            text: actorName,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: context.textHigh,
                             ),
                           ),
+
                           TextSpan(text: ' $message'),
                         ],
                       ),
@@ -444,11 +477,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: context.border),
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Text(
                           'Decline',
                           style: TextStyle(
-                            color: Color(0xFF18181B),
+                            color: context.textHigh,
                             fontWeight: FontWeight.w600,
                             fontSize: 14,
                           ),
@@ -485,7 +518,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   : context.t('class_request_declined'),
             ),
             backgroundColor:
-                accepted ? const Color(0xFF0F2F6A) : Colors.grey,
+                accepted ? context.primary : Colors.grey,
+            behavior: SnackBarBehavior.floating,
           ),
         );
       }

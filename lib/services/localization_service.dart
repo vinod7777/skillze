@@ -76,6 +76,12 @@ class LocalizationService {
       'account_transparency': 'Account Transparency',
       'account_transparency_desc': 'Skillze is committed to showing you information about the accounts you interact with.',
       'about_account_privacy_notice': 'To help keep our community authentic, we’re showing information about accounts on Skillze. See why this information is important.',
+      'nearby': 'nearby',
+      'in_range': 'In range',
+      'matched': 'matched',
+      'away': 'Away',
+      'relocating': 'Relocating',
+      'direction': 'Direction',
     },
     'hi': {
       'home': 'होम',

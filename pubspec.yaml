@@ -69,6 +69,8 @@ dependencies:
 
   intl: any
   firebase_analytics: ^12.2.0
+  any_link_preview: ^3.0.1
+  emoji_picker_flutter: ^4.4.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'auth/login_screen.dart';
 import 'auth/signup_screen.dart';
+import '../theme/app_theme.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -10,7 +12,7 @@ class WelcomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.bg,
       body: SafeArea(
         child: Column(
           children: [
@@ -29,19 +31,20 @@ class WelcomeScreen extends StatelessWidget {
                 ],
                 size,
                 true, // top
+                context,
               ),
             ),
             // Logo
             _buildLogo(),
             const SizedBox(height: 16),
             // SKILLZE text
-            const Text(
+            Text(
               'SKILLZE',
-              style: TextStyle(
-                fontSize: 42,
+              style: GoogleFonts.outfit(
+                fontSize: 52,
                 fontWeight: FontWeight.w900,
-                color: Color(0xFF0F2F6A),
-                letterSpacing: 4,
+                color: context.primary,
+                letterSpacing: 3,
               ),
             ),
             const Spacer(flex: 1),
@@ -58,6 +61,7 @@ class WelcomeScreen extends StatelessWidget {
                 ],
                 size,
                 false, // bottom
+                context,
               ),
             ),
             const Spacer(flex: 1),
@@ -75,7 +79,7 @@ class WelcomeScreen extends StatelessWidget {
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0F2F6A),
+                    backgroundColor: context.primary,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
@@ -98,10 +102,10 @@ class WelcomeScreen extends StatelessWidget {
                   MaterialPageRoute(builder: (_) => const SignupScreen()),
                 );
               },
-              child: const Text(
+              child: Text(
                 'Create New Account',
                 style: TextStyle(
-                  color: Color(0xFF71717A),
+                  color: context.textMed,
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
                 ),
@@ -117,8 +121,8 @@ class WelcomeScreen extends StatelessWidget {
   Widget _buildLogo() {
     return Image.asset(
       'assets/logo.png',
-      width: 150,
-      height: 150,
+      width: 300,
+      height: 300,
       fit: BoxFit.contain,
     );
   }
@@ -127,29 +131,23 @@ class WelcomeScreen extends StatelessWidget {
     List<_ScatterIcon> icons,
     Size screenSize,
     bool isTop,
+    BuildContext context,
   ) {
     return Stack(
       children: icons.map((icon) {
-        // Find distance from the central logo/name area
-        // Normalized center is roughly (0.5, 0.5) for the whole screen
-        // But here we are in a limited height container.
-        // We'll calculate distance relative to the horizontal center (0.5)
-        // and vertically away from the center of the screen.
-
         final double dx = icon.x - 0.5;
-        // Vertically, if it's top, distance increases as it moves up (y decreases)
-        // If it's bottom, distance increases as it moves down (y increases)
-        // Let's just use horizontal distance for now as a good proxy for "near name"
         final double dist = math.sqrt(dx * dx * 1.5 + (0.5 - icon.y) * 0.5);
-
-        // Map dist to color
         final double t = (dist * 1.5).clamp(0.0, 1.0);
 
-        final Color iconColor = Color.lerp(
-          const Color(0xFFF1F5F9), // Lighter near center
-          const Color(0xFF94A3B8), // SIGNIFICANTLY Darker far away
-          t,
-        )!;
+        // Adapt decorative colors for dark mode
+        final Color nearColor = context.isDark
+            ? context.surfaceLightColor
+            : const Color(0xFFF1F5F9);
+        final Color farColor = context.isDark
+            ? context.textLow.withOpacity(0.2)
+            : const Color(0xFF94A3B8);
+
+        final Color iconColor = Color.lerp(nearColor, farColor, t)!;
 
         return Positioned(
           left: screenSize.width * icon.x,
@@ -157,11 +155,7 @@ class WelcomeScreen extends StatelessWidget {
           bottom: !isTop ? 100 * icon.y : null,
           child: Transform.rotate(
             angle: icon.rotation,
-            child: Icon(
-              icon.iconData,
-              size: icon.size,
-              color: iconColor,
-            ),
+            child: Icon(icon.iconData, size: icon.size, color: iconColor),
           ),
         );
       }).toList(),

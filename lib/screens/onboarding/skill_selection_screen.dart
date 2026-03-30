@@ -3,20 +3,48 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/profanity_filter_service.dart';
 import '../../utils/profanity_helper.dart';
+import '../../theme/app_theme.dart';
 
 class SkillSelectionScreen extends StatefulWidget {
-  const SkillSelectionScreen({super.key});
+  final bool isEditMode;
+  final List<String> initialSelectedSkills;
+
+  const SkillSelectionScreen({
+    super.key,
+    this.isEditMode = false,
+    this.initialSelectedSkills = const [],
+  });
 
   @override
   State<SkillSelectionScreen> createState() => _SkillSelectionScreenState();
 }
 
 class _SkillSelectionScreenState extends State<SkillSelectionScreen> {
-  final List<String> _selectedSkills = [];
+  late final List<String> _selectedSkills;
   final List<String> _customSkills = [];
   final TextEditingController _searchController = TextEditingController();
   bool _isSaving = false;
   String _searchQuery = "";
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedSkills = List<String>.from(widget.initialSelectedSkills);
+    
+    // Identify custom skills that are not in the predefined categories
+    final allPredefined = <String>{};
+    for (var list in _categories.values) {
+      for (var s in list) {
+        allPredefined.add(s['name'] as String);
+      }
+    }
+
+    for (var skill in _selectedSkills) {
+      if (!allPredefined.contains(skill)) {
+        _customSkills.add(skill);
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -98,13 +126,38 @@ class _SkillSelectionScreenState extends State<SkillSelectionScreen> {
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid != null) {
-        await FirebaseFirestore.instance.collection('users').doc(uid).update({
+        final docRef = FirebaseFirestore.instance.collection('users').doc(uid);
+        final doc = await docRef.get();
+        final currentSkillsWithLevels = List<Map<String, dynamic>>.from(doc.data()?['skills_with_levels'] ?? []);
+        
+        // Construct new skills_with_levels list based on selections
+        final updatedSkillsWithLevels = _selectedSkills.map((name) {
+          try {
+            return currentSkillsWithLevels.firstWhere(
+              (s) => s['name'] == name,
+            );
+          } catch (_) {
+            return {'name': name, 'level': 'Intermediate'};
+          }
+        }).toList();
+
+        final Map<String, dynamic> updateData = {
           'skills': _selectedSkills,
-          'onboardingStep': 1,
-        });
+          'skills_with_levels': updatedSkillsWithLevels,
+        };
+        
+        if (!widget.isEditMode) {
+          updateData['onboardingStep'] = 1;
+        }
+
+        await docRef.update(updateData);
       }
       if (mounted) {
-        Navigator.pushReplacementNamed(context, '/location');
+        if (widget.isEditMode) {
+          Navigator.pop(context);
+        } else {
+          Navigator.pushReplacementNamed(context, '/interests');
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -120,7 +173,7 @@ class _SkillSelectionScreenState extends State<SkillSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FB),
+      backgroundColor: context.bg,
       body: SafeArea(
         child: Column(
           children: [
@@ -129,12 +182,12 @@ class _SkillSelectionScreenState extends State<SkillSelectionScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                   Text(
                     'What are you good at?',
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF0F2F6A),
+                      color: context.textHigh,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -142,18 +195,19 @@ class _SkillSelectionScreenState extends State<SkillSelectionScreen> {
                     'Select the skills you want to share or learn in Skillze.',
                     style: TextStyle(
                       fontSize: 16,
-                      color: const Color(0xFF0F2F6A).withValues(alpha: 0.6),
+                      color: context.textMed,
                     ),
                   ),
                   const SizedBox(height: 24),
                   // Search and Add Bar
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: context.surfaceColor,
                       borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: context.border, width: 1.5),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
+                          color: Colors.black.withOpacity(0.05),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -163,18 +217,23 @@ class _SkillSelectionScreenState extends State<SkillSelectionScreen> {
                       controller: _searchController,
                       onChanged: (value) => setState(() => _searchQuery = value),
                       onSubmitted: (_) => _addCustomSkill(),
+                      style: TextStyle(color: context.textHigh),
                       decoration: InputDecoration(
                         hintText: 'Search or add your own skill...',
-                        hintStyle: const TextStyle(color: Color(0xFFA1A1AA)),
-                        prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF0F2F6A)),
+                        hintStyle: TextStyle(color: context.textLow),
+                        prefixIcon: Icon(Icons.search_rounded, color: context.primary),
                         suffixIcon: _searchController.text.isNotEmpty
                             ? IconButton(
-                                icon: const Icon(Icons.add_circle_rounded, color: Color(0xFF0F2F6A)),
+                                icon: Icon(Icons.add_circle_rounded, color: context.primary),
                                 onPressed: _addCustomSkill,
                                 tooltip: 'Add custom skill',
                               )
                             : null,
                         border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        disabledBorder: InputBorder.none,
+                        filled: false,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                       ),
                     ),
@@ -192,15 +251,15 @@ class _SkillSelectionScreenState extends State<SkillSelectionScreen> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 16),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
                           child: Text(
                             'YOUR ADDED SKILLS',
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 1.2,
-                              color: Color(0xFFA1A1AA),
+                              color: context.textLow,
                             ),
                           ),
                         ),
@@ -237,11 +296,11 @@ class _SkillSelectionScreenState extends State<SkillSelectionScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           child: Text(
                             category.key.toUpperCase(),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 1.2,
-                              color: Color(0xFFA1A1AA),
+                              color: context.textLow,
                             ),
                           ),
                         ),
@@ -275,7 +334,7 @@ class _SkillSelectionScreenState extends State<SkillSelectionScreen> {
                 child: ElevatedButton(
                   onPressed: _isSaving ? null : _saveAndContinue,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0F2F6A),
+                    backgroundColor: context.primary,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
@@ -300,6 +359,7 @@ class _SkillSelectionScreenState extends State<SkillSelectionScreen> {
       ),
     );
   }
+
   Widget _buildSkillChip(String name, IconData icon, bool isSelected) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
@@ -308,15 +368,15 @@ class _SkillSelectionScreenState extends State<SkillSelectionScreen> {
         vertical: 12,
       ),
       decoration: BoxDecoration(
-        color: isSelected ? const Color(0xFF0F2F6A) : Colors.white,
+        color: isSelected ? context.primary : context.surfaceColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isSelected ? const Color(0xFF0F2F6A) : const Color(0xFFE4E4E7),
+          color: isSelected ? context.primary : context.border,
         ),
         boxShadow: isSelected
             ? [
                 BoxShadow(
-                  color: const Color(0xFF0F2F6A).withValues(alpha: 0.2),
+                  color: context.primary.withOpacity(0.2),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 )
@@ -329,13 +389,13 @@ class _SkillSelectionScreenState extends State<SkillSelectionScreen> {
           Icon(
             icon,
             size: 18,
-            color: isSelected ? Colors.white : const Color(0xFF0F2F6A),
+            color: isSelected ? Colors.white : context.primary,
           ),
           const SizedBox(width: 8),
           Text(
             name,
             style: TextStyle(
-              color: isSelected ? Colors.white : const Color(0xFF18181B),
+              color: isSelected ? Colors.white : context.textHigh,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
             ),
           ),

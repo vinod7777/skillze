@@ -131,7 +131,7 @@ class MainNavigationState extends State<MainNavigation> with WidgetsBindingObser
 
   final List<Widget> _screens = [
     const HomeScreen(),
-    const SearchScreen(),
+    SearchScreen(key: SearchScreen.searchKey),
     const MessagesScreen(),
     const ProfileScreen(),
   ];
@@ -160,11 +160,11 @@ class MainNavigationState extends State<MainNavigation> with WidgetsBindingObser
         ),
         bottomNavigationBar: Container(
           decoration: BoxDecoration(
-            color: context.surfaceColor.withValues(alpha: 0.95),
-            border: Border(top: BorderSide(color: context.border.withValues(alpha: 0.08), width: 0.5)),
+            color: context.surfaceColor.withOpacity(0.95),
+            border: Border(top: BorderSide(color: context.border.withOpacity(0.08), width: 0.5)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
+                color: Colors.black.withOpacity(0.03),
                 blurRadius: 15,
                 offset: const Offset(0, -5),
               ),
@@ -203,7 +203,7 @@ class MainNavigationState extends State<MainNavigation> with WidgetsBindingObser
           children: [
             Icon(
               isSelected ? selectedIcon : unselectedIcon,
-              color: isSelected ? context.primary : context.textLow.withValues(alpha: 0.5),
+              color: isSelected ? context.primary : context.textLow.withOpacity(0.7),
               size: 26,
             ),
             const SizedBox(height: 4),
@@ -212,7 +212,7 @@ class MainNavigationState extends State<MainNavigation> with WidgetsBindingObser
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected ? context.primary : context.textLow.withValues(alpha: 0.5),
+                color: isSelected ? context.primary : context.textLow.withOpacity(0.7),
                 letterSpacing: 0.2,
               ),
             ),
@@ -244,7 +244,7 @@ class MainNavigationState extends State<MainNavigation> with WidgetsBindingObser
             ),
           ],
         ),
-        child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
+        child: Icon(Icons.add_rounded, color: context.isDark ? Colors.black : Colors.white, size: 28),
       ),
     );
   }

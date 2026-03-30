@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../theme/app_theme.dart';
 
 class VerificationScreen extends StatefulWidget {
   final String email;
@@ -82,7 +83,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FB),
+      backgroundColor: context.bg,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -97,32 +98,32 @@ class _VerificationScreenState extends State<VerificationScreen> {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: context.surfaceColor,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE4E4E7)),
+                    border: Border.all(color: context.border),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.arrow_back_ios_new_rounded,
                     size: 18,
-                    color: Color(0xFF18181B),
+                    color: context.textHigh,
                   ),
                 ),
               ),
               const SizedBox(height: 32),
-              const Text(
+               Text(
                 'Verification',
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF18181B),
+                  color: context.textHigh,
                 ),
               ),
               const SizedBox(height: 12),
               Text(
                 'We sent a verification code to\n${widget.email}',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15,
-                  color: Color(0xFF71717A),
+                  color: context.textMed,
                   height: 1.5,
                 ),
               ),
@@ -136,12 +137,12 @@ class _VerificationScreenState extends State<VerificationScreen> {
                     height: 56,
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: context.surfaceColor,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: _focusNodes[index].hasFocus
-                              ? const Color(0xFF0F2F6A)
-                              : const Color(0xFFE4E4E7),
+                              ? context.primary
+                              : context.border,
                           width: _focusNodes[index].hasFocus ? 2 : 1,
                         ),
                       ),
@@ -151,10 +152,10 @@ class _VerificationScreenState extends State<VerificationScreen> {
                         keyboardType: TextInputType.number,
                         textAlign: TextAlign.center,
                         maxLength: 1,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF18181B),
+                          color: context.textHigh,
                         ),
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly,
@@ -186,18 +187,18 @@ class _VerificationScreenState extends State<VerificationScreen> {
                 child: _secondsRemaining > 0
                     ? Text(
                         'Send in: ${_secondsRemaining}s',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
-                          color: Color(0xFF71717A),
+                          color: context.textMed,
                         ),
                       )
                     : GestureDetector(
                         onTap: _startTimer,
-                        child: const Text(
+                        child: Text(
                           'Resend Code',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Color(0xFF0F2F6A),
+                            color: context.primary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -211,7 +212,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                 child: ElevatedButton(
                   onPressed: _isVerifying ? null : _verify,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0F2F6A),
+                    backgroundColor: context.primary,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),

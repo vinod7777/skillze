@@ -32,26 +32,34 @@ class MentionHelper {
     if (mentionedUsernames.isEmpty) return;
 
     try {
-      final usersSnapshot = await FirebaseFirestore.instance.collection('users').get();
-      
-      // Map usernames to their respective User IDs
-      for (var doc in usersSnapshot.docs) {
-        final username = doc.data()['username'] as String?;
-        final targetUserId = doc.id;
-        
-        if (username != null && 
-            mentionedUsernames.contains(username) &&
-            targetUserId != currentUserId) {
+      // Chunk mentioned usernames to handle Firestore 'whereIn' limits (10-30 depending on SDK)
+      // Usually 30 for modern Web/Admin SDKs, 10 for some older ones.
+      // We'll use 10 to be safe.
+      for (int i = 0; i < mentionedUsernames.length; i += 10) {
+        final chunk = mentionedUsernames.sublist(
+          i,
+          i + 10 > mentionedUsernames.length ? mentionedUsernames.length : i + 10,
+        );
+
+        final query = await FirebaseFirestore.instance
+            .collection('users')
+            .where('username', whereIn: chunk)
+            .get();
+
+        for (var doc in query.docs) {
+          final targetUserId = doc.id;
           
-          // Dispatch the notification
-          await NotificationService.sendNotification(
-            targetUserId: targetUserId,
-            type: notificationType,
-            message: notificationMessage,
-            postId: postId,
-            commentId: commentId,
-            chatId: chatId, // Pass chatId to the notification service
-          );
+          if (targetUserId != currentUserId) {
+            // Dispatch the notification (this now sends both Firestore & Push/FCM via NotificationService update)
+            await NotificationService.sendNotification(
+              targetUserId: targetUserId,
+              type: notificationType,
+              message: notificationMessage,
+              postId: postId,
+              commentId: commentId,
+              chatId: chatId,
+            );
+          }
         }
       }
     } catch (e) {

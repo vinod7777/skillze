@@ -4,6 +4,8 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/push_notification_service.dart';
 import 'forgot_password_screen.dart';
+import '../../theme/app_theme.dart';
+import '../../widgets/clean_text_field.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -15,7 +17,6 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _obscurePassword = true;
   bool _isLoading = false;
 
   @override
@@ -147,7 +148,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FB),
+      backgroundColor: context.bg,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -161,7 +162,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.05),
+                    color: context.surfaceLightColor,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Row(
@@ -171,23 +172,23 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: context.surfaceColor,
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.05),
+                                color: Colors.black.withOpacity(0.05),
                                 blurRadius: 2,
                                 offset: const Offset(0, 1),
                               ),
                             ],
                           ),
-                          child: const Text(
+                          child:  Text(
                             'Sign in',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF18181B),
+                              color: context.textHigh,
                             ),
                           ),
                         ),
@@ -201,13 +202,13 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 10),
-                            child: const Text(
+                            child:  Text(
                               'Sign up',
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
-                                color: Color(0xFFA1A1AA),
+                                color: context.textLow,
                               ),
                             ),
                           ),
@@ -219,89 +220,32 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 48),
 
                 // Welcome text
-                const Text(
+                 Text(
                   'Welcome back,',
                   style: TextStyle(
                     fontSize: 30,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF18181B),
+                    color: context.textHigh,
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                 Text(
                   'Good to see you again',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w400,
-                    color: Color(0xFF71717A),
+                    color: context.textMed,
                   ),
                 ),
                 const SizedBox(height: 40),
 
                 // Email field
-                Container(
-                  padding: const EdgeInsets.all(17),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: const Color(0xFFF4F4F5)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 2,
-                        offset: const Offset(0, 1),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Padding(
-                        padding: EdgeInsets.only(left: 4),
-                        child: Text(
-                          'EMAIL',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFFA1A1AA),
-                            letterSpacing: 1,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.email_outlined,
-                            size: 18,
-                            color: Color(0xFFA1A1AA),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: TextField(
-                              controller: _emailController,
-                              keyboardType: TextInputType.emailAddress,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: Color(0xFF18181B),
-                              ),
-                              decoration: const InputDecoration(
-                                hintText: 'your@email.com',
-                                hintStyle: TextStyle(color: Color(0xFFA1A1AA)),
-                                isDense: true,
-                                contentPadding: EdgeInsets.zero,
-                                border: InputBorder.none,
-                                enabledBorder: InputBorder.none,
-                                focusedBorder: InputBorder.none,
-                                filled: false,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                CleanTextField(
+                  label: 'EMAIL',
+                  hintText: 'your@email.com',
+                  controller: _emailController,
+                  prefixIcon: Icons.email_outlined,
+                  keyboardType: TextInputType.emailAddress,
                 ),
                 const SizedBox(height: 24),
 
@@ -309,83 +253,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(17),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: const Color(0xFFF4F4F5)),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 2,
-                            offset: const Offset(0, 1),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Padding(
-                            padding: EdgeInsets.only(left: 4),
-                            child: Text(
-                              'PASSWORD',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFFA1A1AA),
-                                letterSpacing: 1,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.lock_outline,
-                                size: 18,
-                                color: Color(0xFFA1A1AA),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: TextField(
-                                  controller: _passwordController,
-                                  obscureText: _obscurePassword,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    color: Color(0xFF18181B),
-                                  ),
-                                  decoration: const InputDecoration(
-                                    hintText: 'password',
-                                    hintStyle: TextStyle(
-                                      color: Color(0xFFA1A1AA),
-                                    ),
-                                    isDense: true,
-                                    contentPadding: EdgeInsets.zero,
-                                    border: InputBorder.none,
-                                    enabledBorder: InputBorder.none,
-                                    focusedBorder: InputBorder.none,
-                                    filled: false,
-                                  ),
-                                ),
-                              ),
-                              GestureDetector(
-                                onTap: () => setState(
-                                  () => _obscurePassword = !_obscurePassword,
-                                ),
-                                child: Icon(
-                                  _obscurePassword
-                                      ? Icons.visibility_off_outlined
-                                      : Icons.visibility_outlined,
-                                  size: 18,
-                                  color: const Color(0xFFA1A1AA),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                    CleanTextField(
+                      label: 'PASSWORD',
+                      hintText: 'password',
+                      controller: _passwordController,
+                      prefixIcon: Icons.lock_outline,
+                      isPassword: true,
                     ),
                     const SizedBox(height: 12),
                     Padding(
@@ -399,12 +272,12 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           );
                         },
-                        child: const Text(
+                        child:  Text(
                           'Forgot password',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFFA1A1AA),
+                            color: context.textLow,
                           ),
                         ),
                       ),
@@ -419,39 +292,33 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0F2F6A),
+                      color: context.primary,
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF5E3B95).withValues(alpha: 0.2),
+                          color: context.primary.withOpacity(0.2),
                           blurRadius: 15,
                           offset: const Offset(0, 10),
                           spreadRadius: -3,
-                        ),
-                        BoxShadow(
-                          color: const Color(0xFF5E3B95).withValues(alpha: 0.2),
-                          blurRadius: 6,
-                          offset: const Offset(0, 4),
-                          spreadRadius: -4,
                         ),
                       ],
                     ),
                     child: Center(
                       child: _isLoading
-                          ? const SizedBox(
+                          ? SizedBox(
                               width: 24,
                               height: 24,
                               child: CircularProgressIndicator(
-                                color: Colors.white,
+                                color: context.isDark ? Colors.black : Colors.white,
                                 strokeWidth: 2,
                               ),
                             )
-                          : const Text(
+                          : Text(
                               'Sign In',
                               style: TextStyle(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 16,
-                                color: Colors.white,
+                                color: context.isDark ? Colors.black : Colors.white,
                               ),
                             ),
                     ),
@@ -465,24 +332,24 @@ class _LoginScreenState extends State<LoginScreen> {
                     Expanded(
                       child: Container(
                         height: 1,
-                        color: const Color(0xFFE4E4E7),
+                        color: context.border,
                       ),
                     ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16),
+                     Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Text(
                         'Or continue with',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFFA1A1AA),
+                          color: context.textLow,
                         ),
                       ),
                     ),
                     Expanded(
                       child: Container(
                         height: 1,
-                        color: const Color(0xFFE4E4E7),
+                        color: context.border,
                       ),
                     ),
                   ],
@@ -499,12 +366,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         vertical: 15,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: context.surfaceColor,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFFF4F4F5)),
+                        border: Border.all(color: context.border),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
+                            color: Colors.black.withOpacity(0.05),
                             blurRadius: 2,
                             offset: const Offset(0, 1),
                           ),
@@ -518,15 +385,15 @@ class _LoginScreenState extends State<LoginScreen> {
                             height: 20,
                             width: 20,
                             errorBuilder: (context, error, stackTrace) =>
-                                const Icon(Icons.g_mobiledata, size: 20),
+                                 Icon(Icons.g_mobiledata, size: 20, color: context.textHigh),
                           ),
                           const SizedBox(width: 8),
-                          const Text(
+                           Text(
                             'Google',
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF3F3F46),
+                              color: context.textHigh,
                             ),
                           ),
                         ],
@@ -542,4 +409,5 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
+
 }

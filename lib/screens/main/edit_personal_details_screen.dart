@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/profanity_filter_service.dart';
 import '../../utils/profanity_helper.dart';
+import '../../theme/app_theme.dart';
 
 class EditPersonalDetailsScreen extends StatefulWidget {
   const EditPersonalDetailsScreen({super.key});
@@ -57,14 +58,12 @@ class _EditPersonalDetailsScreenState extends State<EditPersonalDetailsScreen> {
 
       setState(() => _isSaving = true);
       try {
-        // Update Firestore
         await _firestore.collection('users').doc(user.uid).update({
           'name': _nameController.text.trim(),
           'bio': _bioController.text.trim(),
           'phone': _phoneController.text.trim(),
         });
 
-        // Update Email if changed
         if (_emailController.text.trim() != user.email) {
           await user.verifyBeforeUpdateEmail(_emailController.text.trim());
         }
@@ -85,21 +84,29 @@ class _EditPersonalDetailsScreenState extends State<EditPersonalDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: context.bg,
+        body: Center(child: CircularProgressIndicator(color: context.primary)),
+      );
+    }
 
     return Scaffold(
+      backgroundColor: context.bg,
       appBar: AppBar(
-        title: const Text('Edit Profile'),
+        backgroundColor: context.bg,
+        elevation: 0,
+        title: Text('Edit Profile', style: TextStyle(color: context.textHigh)),
         leading: IconButton(
-          icon: const Icon(Icons.close_rounded),
+          icon: Icon(Icons.close_rounded, color: context.textHigh),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
           TextButton(
             onPressed: _isSaving ? null : _saveChanges,
             child: _isSaving 
-              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-              : Text('Done', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Theme.of(context).primaryColor)),
+              ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: context.primary))
+              : Text('Done', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: context.primary)),
           ),
         ],
       ),
@@ -110,19 +117,22 @@ class _EditPersonalDetailsScreenState extends State<EditPersonalDetailsScreen> {
             _buildEditField('Name', _nameController, Icons.person_outline_rounded),
             const SizedBox(height: 20),
             _buildEditField('Email', _emailController, Icons.email_outlined), 
-            const Padding(
-              padding: EdgeInsets.only(top: 8, left: 4),
-              child: Text('Note: Fast login might be required after email change.', style: TextStyle(fontSize: 10, color: Colors.grey)),
+             Padding(
+              padding: const EdgeInsets.only(top: 8, left: 4),
+              child: Text(
+                'Note: Fast login might be required after email change.',
+                style: TextStyle(fontSize: 10, color: context.textLow),
+              ),
             ),
             const SizedBox(height: 20),
             _buildEditField('Phone', _phoneController, Icons.phone_android_rounded),
             const SizedBox(height: 20),
             _buildEditField('Bio', _bioController, Icons.info_outline_rounded, maxLines: 3),
             const SizedBox(height: 40),
-            const Center(
+            Center(
               child: Text(
                 'Personal Information Settings',
-                style: TextStyle(color: Color(0xFF0F2F6A), fontWeight: FontWeight.bold),
+                style: TextStyle(color: context.primary, fontWeight: FontWeight.bold),
               ),
             ),
           ],
@@ -135,16 +145,18 @@ class _EditPersonalDetailsScreenState extends State<EditPersonalDetailsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+        Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: context.textMed)),
         const SizedBox(height: 8),
         TextField(
           controller: controller,
           enabled: enabled,
           maxLines: maxLines,
+          style: TextStyle(color: context.textHigh),
           decoration: InputDecoration(
-            prefixIcon: Icon(icon, size: 20),
-            border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey.shade300)),
-            focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF0F2F6A))),
+            prefixIcon: Icon(icon, size: 20, color: context.textLow),
+            border: UnderlineInputBorder(borderSide: BorderSide(color: context.border)),
+            enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: context.border)),
+            focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: context.primary)),
           ),
         ),
       ],

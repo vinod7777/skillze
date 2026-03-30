@@ -7,6 +7,9 @@ import '../../services/profanity_filter_service.dart';
 import '../../utils/profanity_helper.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/mention_helper.dart';
+import '../../widgets/linkified_text.dart';
+import 'user_profile_screen.dart';
+import '../../widgets/clean_multiline_input.dart';
 
 class CommentsModal extends StatefulWidget {
   final DocumentSnapshot postDoc;
@@ -33,7 +36,6 @@ class _CommentsModalState extends State<CommentsModal> {
   String? _replyToAuthorName;
 
   // Mention state
-  List<String> _followingList = [];
   List<Map<String, dynamic>> _mentionSuggestions = [];
   String? _currentMentionQuery;
   int _mentionStartIndex = -1;
@@ -41,24 +43,9 @@ class _CommentsModalState extends State<CommentsModal> {
   @override
   void initState() {
     super.initState();
-    _fetchFollowingList();
     _commentController.addListener(_onCommentChanged);
   }
 
-  Future<void> _fetchFollowingList() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-    try {
-      final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-      if (doc.exists) {
-        setState(() {
-          _followingList = List<String>.from(doc.data()?['followingList'] ?? []);
-        });
-      }
-    } catch (e) {
-      debugPrint('Error fetching following list: $e');
-    }
-  }
 
   void _onCommentChanged() {
     final text = _commentController.text;
@@ -95,12 +82,13 @@ class _CommentsModalState extends State<CommentsModal> {
 
   Future<void> _fetchMentionSuggestions(String query) async {
     if (query.isEmpty) {
-      if (_followingList.isEmpty) return;
-      final uidsToFetch = _followingList.take(10).toList();
-      if (uidsToFetch.isEmpty) return;
-      
-      final snapshot = await FirebaseFirestore.instance.collection('users').where(FieldPath.documentId, whereIn: uidsToFetch).get();
-      if (mounted && _currentMentionQuery == "") {
+      // Just fetch some general users if query is empty
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .limit(20)
+          .get();
+
+      if (mounted && (_currentMentionQuery == null || _currentMentionQuery!.isEmpty)) {
         setState(() {
           _mentionSuggestions = snapshot.docs.map((d) => {'uid': d.id, ...d.data()}).toList();
         });
@@ -108,8 +96,11 @@ class _CommentsModalState extends State<CommentsModal> {
       return;
     }
 
+    // Give suggestions according to what the user types
     final queryLower = query.toLowerCase();
-    final snapshot = await FirebaseFirestore.instance
+    
+    // First query by username
+    final usernameSnapshot = await FirebaseFirestore.instance
         .collection('users')
         .where('username', isGreaterThanOrEqualTo: queryLower)
         .where('username', isLessThan: '${queryLower}z')
@@ -117,10 +108,9 @@ class _CommentsModalState extends State<CommentsModal> {
         .get();
 
     if (mounted && _currentMentionQuery == query) {
-      final results = snapshot.docs.map((d) => {'uid': d.id, ...d.data()}).toList();
-      final filtered = results.where((u) => _followingList.contains(u['uid'])).toList();
+      final results = usernameSnapshot.docs.map((d) => {'uid': d.id, ...d.data()}).toList();
       setState(() {
-        _mentionSuggestions = filtered;
+        _mentionSuggestions = results;
       });
     }
   }
@@ -194,7 +184,7 @@ class _CommentsModalState extends State<CommentsModal> {
   }
 
   Future<void> _postComment() async {
-    final text = _commentController.text.trim();
+    final text = CleanMultilineInput.normalize(_commentController.text);
     if (text.isEmpty) return;
 
     if (ProfanityFilterService.hasProfanity(text)) {
@@ -364,6 +354,18 @@ class _CommentsModalState extends State<CommentsModal> {
           'likes': FieldValue.increment(1),
           'likedBy': FieldValue.arrayUnion([user.uid]),
         });
+        
+        // Send notification to comment author
+        final authorId = data['authorId'] ?? '';
+        if (authorId.isNotEmpty && authorId != user.uid) {
+          NotificationService.sendNotification(
+            targetUserId: authorId,
+            type: 'comment_like',
+            message: 'liked your comment',
+            postId: widget.postDoc.id,
+            commentId: commentRef.id,
+          );
+        }
       }
     } catch (e) {
       // Silently fail
@@ -377,7 +379,10 @@ class _CommentsModalState extends State<CommentsModal> {
     final postAuthorId = _getPostAuthorId();
     if (user.uid != postAuthorId) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Only the post author can pin comments')),
+        SnackBar(
+          content: const Text('Only the post author can pin comments'),
+          action: SnackBarAction(label: 'Close', onPressed: () {}),
+        ),
       );
       return;
     }
@@ -406,6 +411,7 @@ class _CommentsModalState extends State<CommentsModal> {
             content: Text(
               currentlyPinned ? 'Comment unpinned' : 'Comment pinned',
             ),
+            action: SnackBarAction(label: 'Close', onPressed: () {}),
           ),
         );
       }
@@ -423,15 +429,6 @@ class _CommentsModalState extends State<CommentsModal> {
       _replyToCommentId = commentId;
       _replyToAuthorName = authorName;
     });
-    // Optional: Focus the input field when starting a reply
-    if (mounted) {
-      // Small delay just to ensure the UI updates first
-      Future.delayed(const Duration(milliseconds: 100), () {
-        if (mounted) {
-          // You could use a FocusNode if you have one attached to the TextField
-        }
-      });
-    }
   }
 
   void _cancelReply() {
@@ -551,7 +548,7 @@ class _CommentsModalState extends State<CommentsModal> {
       height: MediaQuery.of(context).size.height * 0.8,
       decoration: BoxDecoration(
         color: context.bg,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
       ),
       child: Column(
         children: [
@@ -562,7 +559,7 @@ class _CommentsModalState extends State<CommentsModal> {
               width: 48,
               height: 4,
               decoration: BoxDecoration(
-                color: context.border.withValues(alpha: 0.1),
+                color: context.border.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -598,7 +595,7 @@ class _CommentsModalState extends State<CommentsModal> {
               ],
             ),
           ),
-          Divider(color: context.border.withValues(alpha: 0.1)),
+          Divider(color: context.border.withOpacity(0.1)),
 
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
@@ -660,7 +657,7 @@ class _CommentsModalState extends State<CommentsModal> {
           if (_replyToAuthorName != null)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              color: const Color(0xFFF1F5F9),
+              color: context.primary.withOpacity(0.05),
               child: Row(
                 children: [
                    Icon(
@@ -696,7 +693,7 @@ class _CommentsModalState extends State<CommentsModal> {
               constraints: const BoxConstraints(maxHeight: 180),
               decoration: BoxDecoration(
                 color: context.surfaceLightColor,
-                border: Border(top: BorderSide(color: context.border.withValues(alpha: 0.2))),
+                border: Border(top: BorderSide(color: context.border.withOpacity(0.2))),
                 boxShadow: const [
                   BoxShadow(
                     color: Colors.black12,
@@ -740,40 +737,25 @@ class _CommentsModalState extends State<CommentsModal> {
                 bottom: MediaQuery.of(context).viewInsets.bottom + 12,
               ),
               decoration: BoxDecoration(
-                color: context.surfaceLightColor.withValues(alpha: 0.5),
+                color: context.bg,
                 border: Border(
-                  top: BorderSide(color: context.border.withValues(alpha: 0.1)),
+                  top: BorderSide(color: context.border.withOpacity(0.1)),
                 ),
               ),
               child: Row(
                 children: [
                   Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: context.surfaceColor,
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: context.border.withValues(alpha: 0.2)),
-                      ),
-                      child: TextField(
-                        controller: _commentController,
-                        style: TextStyle(color: context.textHigh),
-                        textCapitalization: TextCapitalization.sentences,
-                        onSubmitted: (_) => _postComment(),
-                        decoration: InputDecoration(
-                          hintText: _replyToAuthorName != null
-                              ? 'Reply to $_replyToAuthorName... (use @username)'
-                              : 'Add a comment... (use @username to mention)',
-                          hintStyle: TextStyle(
-                            color: context.textLow,
-                          ),
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          fillColor: Colors.transparent,
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                      ),
+                    child: CleanMultilineInput(
+                      controller: _commentController,
+                      hintText: _replyToAuthorName != null
+                          ? 'Reply to $_replyToAuthorName...'
+                          : 'Add a comment...',
+                      onChanged: (_) => _onCommentChanged(),
+                      // Compact style for comment bar
+                      style: TextStyle(color: context.textHigh, fontSize: 13),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      minLines: 1,
+                      showBorder: true,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -781,9 +763,9 @@ class _CommentsModalState extends State<CommentsModal> {
                     onTap: _isPosting ? null : _postComment,
                     child: Container(
                       padding: const EdgeInsets.all(12),
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        gradient: LinearGradient(colors: [Color(0xFF0F2F6A), Color(0xFF1A4A8A)]),
+                        color: context.primary,
                       ),
                       child: _isPosting
                           ? const SizedBox(
@@ -863,10 +845,13 @@ class _CommentsModalState extends State<CommentsModal> {
             return Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                UserAvatar(
-                  imageUrl: displayAvatar,
-                  name: displayName,
-                  radius: 20,
+                GestureDetector(
+                  onTap: () => _navigateToUserProfile(authorId),
+                  child: UserAvatar(
+                    imageUrl: displayAvatar,
+                    name: displayName,
+                    radius: 20,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -875,11 +860,18 @@ class _CommentsModalState extends State<CommentsModal> {
                     children: [
                       Row(
                         children: [
-                          Text(
-                            displayName,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: context.textHigh,
+                          Flexible(
+                            child: GestureDetector(
+                              onTap: () => _navigateToUserProfile(authorId),
+                              child: Text(
+                                displayName,
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: context.textHigh,
+                                ),
+                              ),
                             ),
                           ),
                           if (authorId == _getPostAuthorId())
@@ -890,7 +882,7 @@ class _CommentsModalState extends State<CommentsModal> {
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
-                                color: context.primary.withValues(alpha: 0.1),
+                                color: context.primary.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
@@ -913,13 +905,14 @@ class _CommentsModalState extends State<CommentsModal> {
                         ],
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        content,
+                      LinkifiedText(
+                        text: content,
                         style: TextStyle(
                           color: context.textHigh,
                           height: 1.4,
                           fontSize: 14,
                         ),
+                        onMentionTap: _navigateToUserByUsername,
                       ),
                       const SizedBox(height: 8),
 
@@ -1009,7 +1002,7 @@ class _CommentsModalState extends State<CommentsModal> {
                                   Text(
                                     'Delete',
                                     style: TextStyle(
-                                      color: Colors.redAccent.withValues(alpha: 0.8),
+                                      color: Colors.redAccent.withOpacity(0.8),
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -1060,7 +1053,7 @@ class _CommentsModalState extends State<CommentsModal> {
                 padding: const EdgeInsets.only(left: 12),
                 decoration: BoxDecoration(
                   border: Border(
-                    left: BorderSide(color: context.border.withValues(alpha: 0.1), width: 2),
+                    left: BorderSide(color: context.border.withOpacity(0.1), width: 2),
                   ),
                 ),
                 child: Column(
@@ -1093,10 +1086,13 @@ class _CommentsModalState extends State<CommentsModal> {
                                                   replyData['authorProfileImageUrl'];
                               final displayName = userData?['name'] ?? replyAuthor;
 
-                              return UserAvatar(
-                                imageUrl: displayAvatar,
-                                name: displayName,
-                                radius: 14,
+                              return GestureDetector(
+                                onTap: () => _navigateToUserProfile(replyData['authorId'] ?? ''),
+                                child: UserAvatar(
+                                  imageUrl: displayAvatar,
+                                  name: displayName,
+                                  radius: 14,
+                                ),
                               );
                             },
                           ),
@@ -1112,12 +1108,15 @@ class _CommentsModalState extends State<CommentsModal> {
                                       builder: (context, userSnap) {
                                         final userData = userSnap.data?.data() as Map<String, dynamic>?;
                                         final displayName = userData?['name'] ?? replyAuthor;
-                                        return Text(
-                                          displayName,
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            color: context.textHigh,
-                                            fontSize: 13,
+                                        return GestureDetector(
+                                          onTap: () => _navigateToUserProfile(replyData['authorId'] ?? ''),
+                                          child: Text(
+                                            displayName,
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: context.textHigh,
+                                              fontSize: 13,
+                                            ),
                                           ),
                                         );
                                       },
@@ -1133,13 +1132,14 @@ class _CommentsModalState extends State<CommentsModal> {
                                   ],
                                 ),
                                 const SizedBox(height: 2),
-                                Text(
-                                  replyContent,
+                                LinkifiedText(
+                                  text: replyContent,
                                   style: TextStyle(
                                     color: context.textHigh,
                                     fontSize: 13,
                                     height: 1.3,
                                   ),
+                                  onMentionTap: _navigateToUserByUsername,
                                 ),
                                 const SizedBox(height: 6),
                                 Row(
@@ -1192,7 +1192,7 @@ class _CommentsModalState extends State<CommentsModal> {
                                         child: Text(
                                           'Delete',
                                           style: TextStyle(
-                                            color: Colors.redAccent.withValues(alpha: 0.8),
+                                            color: Colors.redAccent.withOpacity(0.8),
                                             fontSize: 11,
                                             fontWeight: FontWeight.w600,
                                           ),
@@ -1215,5 +1215,34 @@ class _CommentsModalState extends State<CommentsModal> {
         },
       ),
     );
+  }
+
+  void _navigateToUserProfile(String userId) {
+    if (userId.isEmpty) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => UserProfileScreen(userId: userId)),
+    );
+  }
+
+  Future<void> _navigateToUserByUsername(String username) async {
+    try {
+      final query = await FirebaseFirestore.instance
+          .collection('users')
+          .where('username', isEqualTo: username)
+          .limit(1)
+          .get();
+
+      if (query.docs.isNotEmpty && mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => UserProfileScreen(userId: query.docs.first.id),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error lookup username: $e');
+    }
   }
 }

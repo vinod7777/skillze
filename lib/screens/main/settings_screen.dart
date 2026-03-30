@@ -303,8 +303,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               groupValue: themeProvider.themeMode,
               activeColor: context.primary,
               onChanged: (mode) {
-                if (mode != null) themeProvider.setTheme(mode);
-                Navigator.pop(context);
+                if (mode != null) {
+                  Navigator.pop(context);
+                  themeProvider.setTheme(mode);
+                }
               },
             ),
             RadioListTile<ThemeMode>(
@@ -313,8 +315,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               groupValue: themeProvider.themeMode,
               activeColor: context.primary,
               onChanged: (mode) {
-                if (mode != null) themeProvider.setTheme(mode);
-                Navigator.pop(context);
+                if (mode != null) {
+                  Navigator.pop(context);
+                  themeProvider.setTheme(mode);
+                }
               },
             ),
           ],

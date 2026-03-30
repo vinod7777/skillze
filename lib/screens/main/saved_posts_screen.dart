@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../widgets/post_card.dart';
 import '../../widgets/skeleton_replacement.dart';
+import '../../theme/app_theme.dart';
 
 class SavedPostsScreen extends StatelessWidget {
   const SavedPostsScreen({super.key});
@@ -12,28 +13,28 @@ class SavedPostsScreen extends StatelessWidget {
     final user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FB),
+      backgroundColor: context.bg,
       appBar: AppBar(
-        title: const Text(
+        title:  Text(
           'Saved Posts',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: Color(0xFF18181B),
+            color: context.textHigh,
           ),
         ),
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          icon:  Icon(Icons.arrow_back_ios_new_rounded, color: context.textHigh),
           onPressed: () => Navigator.pop(context),
         ),
         elevation: 0,
-        backgroundColor: const Color(0xFFF8F9FB),
+        backgroundColor: context.bg,
       ),
       body: user == null
           ? Center(
               child: Text(
                 'Please log in to see saved posts',
-                style: TextStyle(color: const Color(0xFF71717A)),
+                style: TextStyle(color: context.textMed),
               ),
             )
           : StreamBuilder<QuerySnapshot>(
@@ -50,7 +51,7 @@ class SavedPostsScreen extends StatelessWidget {
                   return Center(
                     child: Text(
                       'Error: ${snapshot.error}',
-                      style: TextStyle(color: Colors.redAccent),
+                      style: const TextStyle(color: Colors.redAccent),
                     ),
                   );
                 }
@@ -65,11 +66,11 @@ class SavedPostsScreen extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: context.surfaceColor,
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.05),
+                                color: Colors.black.withOpacity(0.05),
                                 blurRadius: 20,
                               ),
                             ],
@@ -77,14 +78,14 @@ class SavedPostsScreen extends StatelessWidget {
                           child: Icon(
                             Icons.bookmark_border_rounded,
                             size: 48,
-                            color: const Color(0xFF0F2F6A).withValues(alpha: 0.4),
+                            color: context.primary.withOpacity(0.4),
                           ),
                         ),
                         const SizedBox(height: 24),
-                        const Text(
+                         Text(
                           'No saved posts yet',
                           style: TextStyle(
-                            color: Color(0xFF18181B),
+                            color: context.textHigh,
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
@@ -93,7 +94,7 @@ class SavedPostsScreen extends StatelessWidget {
                         Text(
                           'Posts you save will appear here',
                           style: TextStyle(
-                            color: const Color(0xFF71717A),
+                            color: context.textMed,
                             fontSize: 14,
                           ),
                         ),
@@ -114,4 +115,3 @@ class SavedPostsScreen extends StatelessWidget {
     );
   }
 }
-

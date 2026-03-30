@@ -131,8 +131,7 @@ class _PostSuccessScreenState extends State<PostSuccessScreen>
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: const Color(0xFF0F2F6A).withValues(
-                                        alpha:
+                                      color: const Color(0xFF0F2F6A).withOpacity(
                                             0.08 * (1 - _ring3Anim.value * 0.5),
                                       ),
                                       width: 1.5,
@@ -149,8 +148,7 @@ class _PostSuccessScreenState extends State<PostSuccessScreen>
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: const Color(0xFF0F2F6A).withValues(
-                                        alpha:
+                                      color: const Color(0xFF0F2F6A).withOpacity(
                                             0.12 * (1 - _ring2Anim.value * 0.5),
                                       ),
                                       width: 1.5,
@@ -167,8 +165,7 @@ class _PostSuccessScreenState extends State<PostSuccessScreen>
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: const Color(0xFF0F2F6A).withValues(
-                                        alpha:
+                                      color: const Color(0xFF0F2F6A).withOpacity(
                                             0.18 * (1 - _ring1Anim.value * 0.3),
                                       ),
                                       width: 1.5,

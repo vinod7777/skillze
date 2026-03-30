@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'conversation_screen.dart';
+import 'package:skillze/screens/main/conversation_screen.dart';
 import '../../widgets/user_avatar.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/avatar_helper.dart';
 
 class MessagesScreen extends StatefulWidget {
   const MessagesScreen({super.key});
@@ -81,7 +82,7 @@ class _MessagesScreenState extends State<MessagesScreen> with AutomaticKeepAlive
                       child: Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: context.primary.withValues(alpha: 0.08),
+                          color: context.primary.withOpacity(0.08),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -109,7 +110,7 @@ class _MessagesScreenState extends State<MessagesScreen> with AutomaticKeepAlive
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
-                    Icon(Icons.search_rounded, color: context.primary, size: 20),
+                    Icon(Icons.search_rounded, color: context.isDark ? Colors.white : context.textHigh, size: 20),
                     const SizedBox(width: 10),
                     Expanded(
                       child: TextField(
@@ -136,7 +137,7 @@ class _MessagesScreenState extends State<MessagesScreen> with AutomaticKeepAlive
                         child: Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: context.textLow.withValues(alpha: 0.1),
+                            color: context.textLow.withOpacity(0.1),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(Icons.close_rounded, size: 14, color: context.textMed),
@@ -163,8 +164,29 @@ class _MessagesScreenState extends State<MessagesScreen> with AutomaticKeepAlive
                           .orderBy('lastMessageTime', descending: true)
                           .snapshots(),
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
-                          return Center(child: CircularProgressIndicator(color: context.primary));
+                        if (snapshot.hasError) {
+                          return Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(24.0),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 48),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'Error loading messages',
+                                    style: TextStyle(color: context.textHigh, fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Please check your connection or database indexes.',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(color: context.textMed, fontSize: 13),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
                         }
 
                         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
@@ -184,7 +206,7 @@ class _MessagesScreenState extends State<MessagesScreen> with AutomaticKeepAlive
                           separatorBuilder: (context, index) => Divider(
                             height: 1, 
                             thickness: 1, 
-                            color: context.border.withValues(alpha: 0.05),
+                            color: context.border.withOpacity(0.05),
                             indent: 80, // Align with text, not avatar
                           ),
                           itemBuilder: (context, index) {
@@ -205,7 +227,7 @@ class _MessagesScreenState extends State<MessagesScreen> with AutomaticKeepAlive
                                 alignment: Alignment.centerRight,
                                 padding: const EdgeInsets.only(right: 24),
                                 decoration: BoxDecoration(
-                                  color: Colors.red.withValues(alpha: 0.1),
+                                  color: Colors.red.withOpacity(0.1),
                                 ),
                                 child: const Icon(Icons.delete_outline_rounded, color: Colors.red),
                               ),
@@ -291,12 +313,12 @@ class _MessagesScreenState extends State<MessagesScreen> with AutomaticKeepAlive
         });
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? context.primary.withValues(alpha: 0.05) : context.surfaceColor,
+          color: isSelected ? context.textHigh.withOpacity(0.05) : context.surfaceColor,
           border: isSelected 
             ? Border(
-                left: BorderSide(color: context.primary, width: 4),
+                left: BorderSide(color: context.textHigh, width: 4),
               )
             : null,
         ),
@@ -306,9 +328,10 @@ class _MessagesScreenState extends State<MessagesScreen> with AutomaticKeepAlive
               userId: otherUserId,
               name: otherUserName,
               chatData: chatData,
-              showStatus: true,
+              showStatus: false,
+              radius: 22,
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -319,7 +342,7 @@ class _MessagesScreenState extends State<MessagesScreen> with AutomaticKeepAlive
                       Text(
                         otherUserName,
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 15,
                           fontWeight: hasUnread ? FontWeight.bold : FontWeight.w600,
                           color: context.textHigh,
                         ),
@@ -327,14 +350,14 @@ class _MessagesScreenState extends State<MessagesScreen> with AutomaticKeepAlive
                       Text(
                         timeStr,
                         style: TextStyle(
-                          fontSize: 12,
-                          color: hasUnread ? context.primary : context.textLow,
+                          fontSize: 11,
+                          color: hasUnread ? (context.isDark ? Colors.white : Colors.black) : context.textLow,
                           fontWeight: hasUnread ? FontWeight.bold : FontWeight.normal,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Row(
                     children: [
                       Expanded(
@@ -343,7 +366,7 @@ class _MessagesScreenState extends State<MessagesScreen> with AutomaticKeepAlive
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 13,
                             color: hasUnread ? context.textHigh : context.textMed,
                             fontWeight: hasUnread ? FontWeight.w500 : FontWeight.normal,
                           ),
@@ -352,10 +375,10 @@ class _MessagesScreenState extends State<MessagesScreen> with AutomaticKeepAlive
                       if (hasUnread)
                         Container(
                           margin: const EdgeInsets.only(left: 8),
-                          width: 10,
-                          height: 10,
+                          width: 8,
+                          height: 8,
                           decoration: BoxDecoration(
-                            color: context.primary,
+                            color: context.isDark ? Colors.white : Colors.black,
                             shape: BoxShape.circle,
                           ),
                         ),
@@ -386,23 +409,34 @@ class _MessagesScreenState extends State<MessagesScreen> with AutomaticKeepAlive
         return StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
               .collection('users')
-              .where(FieldPath.documentId, whereIn: followingList.take(10).toList())
+              .where(FieldPath.documentId, whereIn: followingList.take(30).toList())
               .snapshots(),
           builder: (context, snapshot) {
             if (!snapshot.hasData) return const SizedBox.shrink();
-            
             final activeUsers = snapshot.data!.docs.where((doc) {
               final data = doc.data() as Map<String, dynamic>;
               final bool isOnline = data['isOnline'] ?? false;
               final Timestamp? lastActive = data['lastActive'] as Timestamp?;
               
-              if (isOnline) return true;
+              if (!isOnline) return false;
+              
+              // Even if isOnline is true, check if they had activity in the last 2 minutes
               if (lastActive != null) {
                 final diff = DateTime.now().difference(lastActive.toDate());
-                return diff.inMinutes < 5;
+                return diff.inMinutes < 2;
               }
+              
               return false;
             }).toList();
+
+            // Sort so that currently online users are first
+            activeUsers.sort((a, b) {
+              final aOnline = (a.data() as Map<String, dynamic>)['isOnline'] ?? false;
+              final bOnline = (b.data() as Map<String, dynamic>)['isOnline'] ?? false;
+              if (aOnline && !bOnline) return -1;
+              if (!aOnline && bOnline) return 1;
+              return 0;
+            });
 
             if (activeUsers.isEmpty) return const SizedBox.shrink();
 
@@ -422,7 +456,7 @@ class _MessagesScreenState extends State<MessagesScreen> with AutomaticKeepAlive
                 ),
                 const SizedBox(height: 12),
                 SizedBox(
-                  height: 80,
+                  height: 70,
                   child: ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     scrollDirection: Axis.horizontal,
@@ -435,20 +469,20 @@ class _MessagesScreenState extends State<MessagesScreen> with AutomaticKeepAlive
                       final otherAvatar = userData['profileImageUrl'];
 
                       return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
                         child: GestureDetector(
                           onTap: () => _startConversation(otherUserId, otherUserName, otherAvatar),
                           child: Column(
                             children: [
                               UserAvatar(
-                                imageUrl: otherAvatar,
+                                imageUrl: AvatarHelper.getAvatarUrl(userData),
                                 name: otherUserName,
-                                radius: 26,
+                                radius: 22,
                                 showOnlineStatus: true,
                               ),
-                              const SizedBox(height: 6),
+                              const SizedBox(height: 4),
                               SizedBox(
-                                width: 56,
+                                width: 44,
                                 child: Text(
                                   otherUserName.split(' ')[0],
                                   textAlign: TextAlign.center,
@@ -503,10 +537,18 @@ class _MessagesScreenState extends State<MessagesScreen> with AutomaticKeepAlive
   }
 
   String _getOtherUserName(Map<String, dynamic> chatData, String currentUid) {
-    final names = chatData['participantNames'] as Map<String, dynamic>?;
+    // 1. Try participants_data first (new consolidated format)
+    final participantsData = chatData['participants_data'] as Map<String, dynamic>?;
     final otherUserId = _getOtherUserId(chatData, currentUid);
-    return names?[otherUserId] ?? 'Unknown';
+    final otherData = participantsData?[otherUserId] as Map<String, dynamic>?;
+    if (otherData?['name'] != null) return otherData!['name'];
+
+    // 2. Fallback to older participantNames field
+    final names = chatData['participantNames'] as Map<String, dynamic>?;
+    return names?[otherUserId] ?? 'User';
   }
+
+
 
   Future<bool> _confirmDeleteChats(List<String> chatIds) async {
     final confirmed = await showDialog<bool>(
@@ -584,9 +626,17 @@ class _MessagesScreenState extends State<MessagesScreen> with AutomaticKeepAlive
             currentUser.uid: currentUserName,
             otherUserId: otherUserName,
           },
-          'participantProfileImages': {
-            currentUser.uid: currentUserAvatar,
-            otherUserId: otherAvatar ?? '',
+          'participants_data': {
+            currentUser.uid: {
+              'name': currentUserName,
+              'profileImageUrl': currentUserAvatar,
+              'uid': currentUser.uid,
+            },
+            otherUserId: {
+              'name': otherUserName,
+              'profileImageUrl': otherAvatar ?? '',
+              'uid': otherUserId,
+            },
           },
           'lastMessage': '',
           'lastMessageTime': FieldValue.serverTimestamp(),
@@ -676,9 +726,17 @@ class _NewChatModalState extends State<NewChatModal> {
             currentUser.uid: currentUserName,
             otherUserId: otherUserName,
           },
-          'participantProfileImages': {
-            currentUser.uid: currentUserAvatar,
-            otherUserId: otherAvatar ?? '',
+          'participants_data': {
+            currentUser.uid: {
+              'name': currentUserName,
+              'profileImageUrl': currentUserAvatar,
+              'uid': currentUser.uid,
+            },
+            otherUserId: {
+              'name': otherUserName,
+              'profileImageUrl': otherAvatar ?? '',
+              'uid': otherUserId,
+            },
           },
           'lastMessage': '',
           'lastMessageTime': FieldValue.serverTimestamp(),
@@ -772,7 +830,7 @@ class _NewChatModalState extends State<NewChatModal> {
                       child: Container(
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          color: context.textLow.withValues(alpha: 0.1),
+                          color: context.textLow.withOpacity(0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(Icons.close_rounded, size: 14, color: context.textMed),
@@ -782,7 +840,7 @@ class _NewChatModalState extends State<NewChatModal> {
               ),
             ),
           ),
-          const SizedBox(height: 20),
+   
           Expanded(
             child: currentUser == null
                 ? const SizedBox.shrink()
@@ -792,13 +850,18 @@ class _NewChatModalState extends State<NewChatModal> {
                       if (!userSnap.hasData) return const Center(child: CircularProgressIndicator());
                       final userData = userSnap.data?.data() as Map<String, dynamic>?;
                       final followers = List<String>.from(userData?['followersList'] ?? []);
+                      final following = List<String>.from(userData?['followingList'] ?? []);
+                      
+                      // Combine both lists and remove duplicates
+                      final combinedIds = {...followers, ...following}.toList();
+                      combinedIds.remove(currentUser.uid); // Ensure self is not included
 
-                      if (followers.isEmpty) return Center(child: Text('No followers yet', style: TextStyle(color: context.textMed)));
+                      if (combinedIds.isEmpty) return Center(child: Text('No connections yet', style: TextStyle(color: context.textMed)));
 
                       return StreamBuilder<QuerySnapshot>(
                         stream: FirebaseFirestore.instance
                             .collection('users')
-                            .where(FieldPath.documentId, whereIn: followers.take(10).toList())
+                            .where(FieldPath.documentId, whereIn: combinedIds.take(30).toList())
                             .snapshots(),
                         builder: (context, followersSnap) {
                           if (!followersSnap.hasData) return const Center(child: CircularProgressIndicator());
@@ -816,7 +879,11 @@ class _NewChatModalState extends State<NewChatModal> {
                               final uData = users[index].data() as Map<String, dynamic>;
                               final uId = users[index].id;
                               return ListTile(
-                                leading: UserAvatar(imageUrl: uData['profileImageUrl'], name: uData['name'] ?? 'User', radius: 24),
+                                leading: UserAvatar(
+                                  imageUrl: AvatarHelper.getAvatarUrl(uData),
+                                  name: uData['name'] ?? 'User',
+                                  radius: 24,
+                                ),
                                 title: Text(uData['name'] ?? 'User', style: TextStyle(fontWeight: FontWeight.w600, color: context.textHigh)),
                                 subtitle: Text(uData['authorRole'] ?? uData['bio'] ?? 'Developer', style: TextStyle(color: context.textMed)),
                                 onTap: _isLoading ? null : () => _startChat(uId, uData['name'], uData['profileImageUrl']),
@@ -834,11 +901,12 @@ class _NewChatModalState extends State<NewChatModal> {
   }
 }
 
-class UserChatAvatar extends StatelessWidget {
+class UserChatAvatar extends StatefulWidget {
   final String userId;
   final String name;
   final Map<String, dynamic> chatData;
   final bool showStatus;
+  final double radius;
 
   const UserChatAvatar({
     super.key,
@@ -846,18 +914,85 @@ class UserChatAvatar extends StatelessWidget {
     required this.name,
     required this.chatData,
     this.showStatus = false,
+    this.radius = 24,
   });
 
   @override
-  Widget build(BuildContext context) {
-    final images = chatData['participantProfileImages'] as Map<String, dynamic>?;
-    final url = images?[userId];
+  State<UserChatAvatar> createState() => _UserChatAvatarState();
+}
 
+class _UserChatAvatarState extends State<UserChatAvatar> {
+  String? _resolvedUrl;
+  String? _resolvedName;
+  bool _fetchedFromFirestore = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _resolveImage();
+  }
+
+  void _resolveImage() {
+    // 1. Try participants_data first (new consolidated format)
+    final participantsData = widget.chatData['participants_data'] as Map<String, dynamic>?;
+    final otherData = participantsData?[widget.userId] as Map<String, dynamic>?;
+
+    // 2. Fallbacks from older fields
+    final url = otherData?['profileImageUrl'] ??
+        (widget.chatData['participantProfileImages'] as Map<String, dynamic>?)?[widget.userId];
+    final displayName = otherData?['name'] ??
+        (widget.chatData['participantNames'] as Map<String, dynamic>?)?[widget.userId] ??
+        widget.name;
+
+    if (url != null && url.toString().isNotEmpty) {
+      // We have the URL cached in chatData — use it directly
+      _resolvedUrl = url;
+      _resolvedName = displayName;
+    } else {
+      // No cached URL — fetch from Firestore as fallback (covers old chats)
+      _resolvedName = displayName;
+      _fetchFromFirestore();
+    }
+  }
+
+  Future<void> _fetchFromFirestore() async {
+    if (_fetchedFromFirestore) return;
+    _fetchedFromFirestore = true;
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.userId)
+          .get();
+      if (doc.exists && mounted) {
+        final data = doc.data();
+        final fetchedUrl = data?['profileImageUrl'] ??
+            data?['photoURL'] ??
+            data?['avatar'] ??
+            data?['profilePhoto'];
+        final fetchedName = data?['name'] ?? data?['displayName'];
+        if (mounted) {
+          setState(() {
+            if (fetchedUrl != null && fetchedUrl.toString().isNotEmpty) {
+              _resolvedUrl = fetchedUrl;
+            }
+            if (fetchedName != null) {
+              _resolvedName = fetchedName;
+            }
+          });
+        }
+      }
+    } catch (_) {
+      // Silently ignore — avatar will show initials
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return UserAvatar(
-      imageUrl: url,
-      name: name,
-      radius: 26,
-      showOnlineStatus: showStatus,
+      imageUrl: _resolvedUrl,
+      name: _resolvedName ?? widget.name,
+      radius: widget.radius,
+      showOnlineStatus: widget.showStatus,
     );
   }
 }
