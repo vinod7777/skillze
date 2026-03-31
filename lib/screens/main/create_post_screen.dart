@@ -147,6 +147,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
     if (mounted && _currentMentionQuery == query) {
       final results = usernameSnapshot.docs.map((d) => {'uid': d.id, ...d.data()}).toList();
+      
+      // If we don't have enough results, maybe try name search or role search in some cases
+      // For now, username is the primary mention handle.
+      
       setState(() {
         _mentionSuggestions = results;
       });
@@ -202,7 +206,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   Future<void> _pickImage(ImageSource source) async {
     if (_selectedImages.length >= 5) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('You can add up to 5 images')),
+        SnackBar(
+          content: const Text('You can add up to 5 images'),
+          backgroundColor: Colors.white,
+          action: SnackBarAction(label: 'Close', textColor: Colors.black, onPressed: () {}),
+        ),
       );
       return;
     }
@@ -237,7 +245,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error picking image: $e')));
+        ).showSnackBar(SnackBar(
+          content: Text('Error picking image: $e'),
+          backgroundColor: Colors.white,
+          action: SnackBarAction(label: 'Close', textColor: Colors.black, onPressed: () {}),
+        ));
       }
     }
   }
@@ -271,7 +283,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     
     if (textContent.isEmpty && _selectedImages.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please write something or add an image')),
+        SnackBar(
+          content: const Text('Please write something or add an image'),
+          backgroundColor: Colors.white,
+          action: SnackBarAction(label: 'Close', textColor: Colors.black, onPressed: () {}),
+        ),
       );
       return;
     }
@@ -292,7 +308,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       if (user == null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Please log in to post')),
+            SnackBar(
+              content: const Text('Please log in to post'),
+              backgroundColor: Colors.white,
+              action: SnackBarAction(label: 'Close', textColor: Colors.black, onPressed: () {}),
+            ),
           );
         }
         setState(() => _isPosting = false);
@@ -320,7 +340,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
         if (mediaUrls.length < _selectedImages.length && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Some images failed to upload.')),
+            SnackBar(
+              content: const Text('Some images failed to upload.'),
+              backgroundColor: Colors.white,
+              action: SnackBarAction(label: 'Close', textColor: Colors.black, onPressed: () {}),
+            ),
           );
         }
       }
@@ -407,7 +431,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(widget.postDoc == null ? 'Post published successfully! 🎉' : 'Post updated successfully! 🎉'),
-            backgroundColor: Colors.green,
+            backgroundColor: Colors.white,
+            action: SnackBarAction(label: 'Close', textColor: Colors.black, onPressed: () {}),
           ),
         );
         
@@ -416,7 +441,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error posting: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Error posting: $e'),
+          backgroundColor: Colors.white,
+          action: SnackBarAction(label: 'Close', textColor: Colors.black, onPressed: () {}),
+        ));
       }
     } finally {
       if (mounted) {
@@ -643,6 +672,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     final name = user['name'] ?? '';
                     final avatar = user['profileImageUrl'] ?? user['photoUrl'] ?? '';
                     
+                    final role = user['role'] ?? user['userType'] ?? user['bio'] ?? 'Member';
+                    
                     return ListTile(
                       dense: true,
                       leading: CircleAvatar(
@@ -651,7 +682,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                         child: avatar.isEmpty ? const Icon(Icons.person, size: 14) : null,
                       ),
                       title: Text(username, style: TextStyle(color: context.textHigh, fontWeight: FontWeight.bold, fontSize: 13)),
-                      subtitle: Text(name, style: TextStyle(color: context.textMed, fontSize: 12)),
+                      subtitle: Text('$name • $role', style: TextStyle(color: context.textMed, fontSize: 11)),
                       onTap: () => _insertMention(username),
                     );
                   },

@@ -242,21 +242,21 @@ class _InterestSelectionScreenState extends State<InterestSelectionScreen> {
                   onPressed: _isSaving ? null : _saveAndContinue,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: context.primary,
-                    foregroundColor: Colors.white,
+                    foregroundColor: context.onPrimary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
                     elevation: 0,
                   ),
                   child: _isSaving
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          child: CircularProgressIndicator(color: context.onPrimary, strokeWidth: 2),
                         )
-                      : const Text(
+                      : Text(
                           'Continue',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: context.onPrimary),
                         ),
                 ),
               ),
@@ -298,14 +298,14 @@ class _InterestSelectionScreenState extends State<InterestSelectionScreen> {
             Icon(
               Icons.stars_rounded,
               size: 16,
-              color: isSelected ? Colors.white : context.primary,
+              color: isSelected ? context.onPrimary : context.primary,
             ),
             const SizedBox(width: 8),
           ],
           Text(
             name,
             style: TextStyle(
-              color: isSelected ? Colors.white : context.textHigh,
+              color: isSelected ? context.onPrimary : context.textHigh,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
             ),
           ),

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Skillze Admin | Moderation Queue</title>
+  <link rel="stylesheet" href="assets/abyssal.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Manrope:wght@800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body>
+
+  <div class="admin-layout">
+    <aside class="sidebar">
+      <div class="logo-section">
+        <div class="logo-dot"></div>
+        <h2 class="brand-text">Skillze <span style="color: var(--on-surface-variant); font-size: 0.8rem; font-weight: 500;">Admin</span></h2>
+      </div>
+
+      <nav class="nav-links">
+        <a href="index.html" class="nav-item">
+          <i class="bi bi-grid-1x2-fill"></i> Dashboard
+        </a>
+        <a href="users.html" class="nav-item">
+          <i class="bi bi-people-fill"></i> Users
+        </a>
+        <a href="posts.html" class="nav-item">
+          <i class="bi bi-collection-play-fill"></i> Posts
+        </a>
+        <a href="stories.html" class="nav-item">
+          <i class="bi bi-clock-history"></i> Stories
+        </a>
+        <a href="chats.html" class="nav-item">
+          <i class="bi bi-chat-dots-fill"></i> Chats
+        </a>
+        <a href="moderation.html" class="nav-item active">
+          <i class="bi bi-shield-lock-fill"></i> Moderation
+        </a>
+        <a href="skills.html" class="nav-item">
+          <i class="bi bi-tags-fill"></i> Taxonomies
+        </a>
+        <a href="broadcast.html" class="nav-item">
+          <i class="bi bi-broadcast"></i> Broadcast
+        </a>
+      </nav>
+
+      <div style="margin-top: auto;">
+        <a href="login.html" class="nav-item" style="color: var(--error);">
+          <i class="bi bi-box-arrow-right"></i> Logout
+        </a>
+      </div>
+    </aside>
+
+    <main class="main-viewport">
+      <header class="page-header" style="display: flex; justify-content: space-between; align-items: flex-end;">
+        <div>
+          <h1 class="page-title">Safety & Reports Queue</h1>
+          <p style="color: var(--on-surface-variant);">Investigate user reports and maintain platform integrity.</p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+           <input type="text" id="reportSearch" placeholder="Search by content or reporter..." style="background: var(--surface-high); border: none; padding: 12px 18px; border-radius: 10px; color: white; width: 250px;">
+        </div>
+      </header>
+
+      <section class="glass-panel" style="background: var(--bg); padding: 0;">
+         <table class="data-table">
+            <thead>
+              <tr>
+                <th>Reported Content</th>
+                <th>Reporter</th>
+                <th>Reason</th>
+                <th>Reported At</th>
+                <th>Status</th>
+                <th>Resolution</th>
+              </tr>
+            </thead>
+            <tbody id="reportListBody">
+              <tr><td colspan="6" style="text-align: center; padding: 50px;">Patrolling for platform violations...</td></tr>
+            </tbody>
+         </table>
+      </section>
+      <footer style="margin-top: 25px; display: flex; justify-content: space-between; color: var(--on-surface-variant); font-size: 0.85rem; padding: 0 20px 20px;">
+        <div id="footerText">Showing reports...</div>
+        <div style="display: flex; gap: 15px; font-weight: 600;">
+          <span id="prevBtn" onclick="prevPage()" style="color: var(--primary); cursor: pointer;">Previous</span>
+          <span id="nextBtn" onclick="nextPage()" style="color: var(--on-surface); cursor: pointer;">Next</span>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <script type="module">
+    import { db, collection, onSnapshot } from './assets/firebase-config.js';
+    import { formatTimestamp, resolveReport } from './assets/data-service.js';
+
+    const listBody = document.getElementById('reportListBody');
+    const footerText = document.getElementById('footerText');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const searchInput = document.getElementById('reportSearch');
+
+    let allReports = [];
+    let filteredReports = [];
+    let currentPage = 1;
+    const pageSize = 10;
+
+    window.takeAction = async (id, status) => {
+      if(confirm("Mark this report as resolved?")) {
+        try {
+          await resolveReport(id, status);
+          alert("Queue updated.");
+        } catch (e) { alert("Resolution failed."); }
+      }
+    };
+
+    if (searchInput) {
+      searchInput.addEventListener('input', () => {
+        processReports();
+      });
+    }
+
+    function processReports() {
+      const term = searchInput ? searchInput.value.toLowerCase() : '';
+      let combined = [...allReports];
+      
+      if (term) {
+        combined = combined.filter(doc => {
+          const r = doc.data();
+          return (r.contentTitle || '').toLowerCase().includes(term) ||
+                 (r.reporterName || '').toLowerCase().includes(term) ||
+                 (r.reason || '').toLowerCase().includes(term);
+        });
+      }
+
+      combined.sort((a, b) => (b.data().timestamp?.seconds || 0) - (a.data().timestamp?.seconds || 0));
+      filteredReports = combined;
+      currentPage = 1;
+      renderGrid();
+    }
+
+    function renderGrid() {
+      if (!listBody) return;
+      const start = (currentPage - 1) * pageSize;
+      const end = start + pageSize;
+      const pageData = filteredReports.slice(start, end);
+
+      if (filteredReports.length === 0) {
+        listBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 60px;"><i class="bi bi-check-circle" style="font-size: 3rem; display: block; margin-bottom: 20px; color: var(--primary);"></i> No matching reports found.</td></tr>';
+        footerText.innerText = "0 matches found";
+        prevBtn.style.display = 'none';
+        nextBtn.style.display = 'none';
+        return;
+      }
+
+      listBody.innerHTML = pageData.map(doc => {
+        const r = doc.data();
+        const isResolved = r.status === 'resolved';
+        return `
+          <tr>
+            <td style="font-weight: 700;">${r.contentTitle || 'Post ID: ' + (r.contentId || doc.id).substring(0,8)}</td>
+            <td style="font-size: 0.85rem; color: var(--on-surface-variant);">@${r.reporterName || 'Anonymous'}</td>
+            <td><span class="badge ${r.reason === 'Spam' ? 'badge-pending' : 'badge-danger'}" style="background: rgba(255,113,108,0.1); color: var(--error); border: none;">${r.reason || 'Safety Violation'}</span></td>
+            <td style="font-size: 0.8rem; opacity: 0.7;">${formatTimestamp(r.timestamp)}</td>
+            <td><span class="badge ${isResolved ? 'badge-success' : 'badge-pending'}">${isResolved ? 'Resolved' : 'Pending'}</span></td>
+            <td>
+               ${isResolved ? '<span style="color: var(--primary); font-size: 0.8rem;">Cleaned</span>' : 
+               `<button onclick="takeAction('${doc.id}', true)" class="btn-primary" style="padding: 6px 14px; font-size: 0.75rem; background: var(--surface-bright); color: var(--on-surface);">Take Action</button>`}
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      const total = filteredReports.length;
+      footerText.innerText = `Showing ${start + 1}-${Math.min(end, total)} of ${total} Security Reports`;
+      
+      prevBtn.style.display = 'inline';
+      nextBtn.style.display = 'inline';
+      prevBtn.style.opacity = currentPage === 1 ? '0.3' : '1';
+      prevBtn.style.pointerEvents = currentPage === 1 ? 'none' : 'auto';
+      nextBtn.style.opacity = end >= total ? '0.3' : '1';
+      nextBtn.style.pointerEvents = end >= total ? 'none' : 'auto';
+    }
+
+    window.nextPage = () => { if ((currentPage * pageSize) < filteredReports.length) { currentPage++; renderGrid(); } };
+    window.prevPage = () => { if (currentPage > 1) { currentPage--; renderGrid(); } };
+
+    onSnapshot(collection(db, "reports"), (snapshot) => {
+      allReports = snapshot.docs;
+      processReports();
+    });
+  </script>
+</body>
+</html>

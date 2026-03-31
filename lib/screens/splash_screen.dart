@@ -7,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:math' as math;
 import 'onboarding_screen.dart';
 import 'welcome_screen.dart';
+import '../theme/app_theme.dart';
 import 'main/main_navigation.dart';
 import 'onboarding/skill_selection_screen.dart';
 import 'onboarding/location_selection_screen.dart';
@@ -149,7 +150,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: context.bg,
       body: Stack(
         children: [
           // Background Illustration Icons
@@ -190,9 +191,9 @@ class _SplashScreenState extends State<SplashScreen>
                 child: Text(
                   'Skillze',
                   style: GoogleFonts.pacifico(
-                    fontSize: 40,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    fontSize: 56,
+                    fontWeight: FontWeight.w800, // Extra bold
+                    color: context.primary,
                   ),
                 ),
                 ),
@@ -247,13 +248,19 @@ class _SplashScreenState extends State<SplashScreen>
         final double dist = math.sqrt(dx * dx + dy * dy);
 
         // Max distance from center to corner is ~0.707
-        // We use it to calculate a t value for color interpolation
         final double t = (dist / 0.707).clamp(0.0, 1.0);
 
-        // Near center = lighter, Far away = darker
+        // Theme-aware icon color
+        final Color baseColor = context.primary;
+        final double minOpacity = context.isDark ? 0.12 : 0.12; // Increased visibility in dark mode
+        final double maxOpacity = context.isDark ? 0.45 : 0.55; // Sharp definition even in dark mode
+
+        // Gradient effect: 
+        // Icons near center = LIGHT (more transparent/faded)
+        // Icons far from center = DARK (higher opacity)
         final Color iconColor = Color.lerp(
-          const Color(0xFFF1F5F9), // Lighter near center
-          const Color(0xFF94A3B8), // SIGNIFICANTLY Darker far away
+          baseColor.withOpacity(minOpacity), 
+          baseColor.withOpacity(maxOpacity), 
           t,
         )!;
 

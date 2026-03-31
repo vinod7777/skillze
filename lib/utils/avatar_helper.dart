@@ -16,16 +16,28 @@ class AvatarHelper {
       'authorProfileImageUrl',
       'authorAvatar',
       'userAvatar',
+      'url',
+      'image',
     ];
 
     for (final field in fields) {
       final value = data[field];
       if (value is String && _isValidUrl(value)) {
-        return value;
+        return _normalizeUrl(value);
       }
     }
 
     return null;
+  }
+
+  static String? _normalizeUrl(String? url) {
+    if (url == null) return null;
+    String cleanStr = url.trim();
+    if (cleanStr.toLowerCase() == 'null' || cleanStr.isEmpty) return null;
+    if (cleanStr.startsWith('www.')) {
+      return 'https://$cleanStr';
+    }
+    return cleanStr;
   }
 
   static bool _isValidUrl(String? url) {
@@ -61,8 +73,9 @@ class AvatarHelper {
   }
 
   static ImageProvider getAvatarProvider(String? url, String? name) {
-    if (url != null && _isValidUrl(url)) {
-      return NetworkImage(url);
+    final normalized = _normalizeUrl(url);
+    if (normalized != null && _isValidUrl(normalized)) {
+      return NetworkImage(normalized);
     }
     // Fallback if URL is invalid - using a stable PNG format to avoid decoding issues
     final encodedName = Uri.encodeComponent(name ?? 'User');

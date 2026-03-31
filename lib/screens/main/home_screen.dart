@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
@@ -106,18 +107,12 @@ class _HomeScreenState extends State<HomeScreen>
   String activeFilter = '';
 
   final List<String> availableSkills = [
-    'Flutter',
-    'React Native',
-    'Node.js',
-    'Python',
-    'UI/UX',
+    'Flutter', 'Product Design', 'Marketing', 'Photography', 'Business', 'Fitness', 'Cooking', 'Gardening',
   ];
   final List<String> availableRoles = [
-    'Frontend Dev',
-    'Backend Dev',
-    'Full Stack',
-    'Designer',
+    'Software Engineer', 'Product Designer', 'Marketing Manager', 'Photographer', 'Entrepreneur', 'Fitness Coach', 'Chef', 'Student',
   ];
+
   
   StreamSubscription? _followingSubscription;
 
@@ -452,28 +447,11 @@ class _HomeScreenState extends State<HomeScreen>
                 alignment: Alignment.centerLeft,
                 child: _buildSettingsButton(),
               ),
-              RichText(
-                text: TextSpan(
-                  children: [
-                    TextSpan(
-                      text: 'Skill',
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w900,
-                        color: context.textHigh,
-                        letterSpacing: -1,
-                      ),
-                    ),
-                    TextSpan(
-                      text: 'ze',
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w900,
-                        color: context.primary,
-                        letterSpacing: -1,
-                      ),
-                    ),
-                  ],
+              Text(
+                'Skillze',
+                style: GoogleFonts.pacifico(
+                  fontSize: 24,
+                  color: context.primary,
                 ),
               ),
               Align(

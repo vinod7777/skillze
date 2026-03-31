@@ -7,6 +7,7 @@ import 'dart:ui' as ui;
 import '../../widgets/user_avatar.dart';
 import '../../theme/app_theme.dart';
 import 'user_profile_screen.dart';
+import 'profile_screen.dart';
 import '../../models/story_model.dart';
 
 class StoryViewerScreen extends StatefulWidget {
@@ -542,8 +543,9 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) =>
-                                      UserProfileScreen(userId: story.userId),
+                                  builder: (_) => isMyStory 
+                                      ? const ProfileScreen()
+                                      : UserProfileScreen(userId: story.userId),
                                 ),
                               ).then((_) => _startTimer());
                             },
@@ -565,8 +567,9 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) =>
-                                      UserProfileScreen(userId: story.userId),
+                                  builder: (_) => isMyStory
+                                      ? const ProfileScreen()
+                                      : UserProfileScreen(userId: story.userId),
                                 ),
                               ).then((_) => _startTimer());
                             },

@@ -199,7 +199,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                       height: 50,
                       child: Icon(
                         Icons.location_on_rounded,
-                        color: context.primary,
+                        color: Colors.black, // Dark contrast on light map
                         size: 44,
                       ),
                     ),

@@ -39,12 +39,12 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.dark,
       scaffoldBackgroundColor: background,
-      colorScheme: ColorScheme.dark(
-        primary: primaryLight,
-        onPrimary: Colors.black, // Dark text on white buttons
-        secondary: secondary,
+      colorScheme: const ColorScheme.dark(
+        primary: Colors.white,
+        onPrimary: Colors.black,
+        secondary: Colors.white,
         onSecondary: Colors.black,
-        tertiary: tertiary,
+        tertiary: Colors.white,
         surface: surface,
         onSurface: textHighEmphasis,
         onSurfaceVariant: textMediumEmphasis,
@@ -145,8 +145,8 @@ class AppTheme {
       primaryIconTheme: const IconThemeData(color: primaryLight),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: Colors.white,
-        contentTextStyle: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
-        actionTextColor: Colors.black87,
+        contentTextStyle: const TextStyle(color: Color(0xFF0F2F6A), fontWeight: FontWeight.bold),
+        actionTextColor: const Color(0xFF0F2F6A),
         behavior: SnackBarBehavior.floating,
         elevation: 6,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -164,7 +164,7 @@ class AppTheme {
   static const Color lightBackground = Color(0xFFF8FAFC);
   static const Color lightSurface = Color(0xFFFFFFFF);
   static const Color lightSurfaceLight = Color(0xFFF1F5F9);
-  static const Color lightTextHighEmphasis = Color(0xFF0F172A);
+  static const Color lightTextHighEmphasis = Color(0xFF0F2F6A);
   static const Color lightTextMediumEmphasis = Color(0xFF64748B);
   static const Color lightBorderOverlay = Color(0x1A000000);
 
@@ -174,15 +174,16 @@ class AppTheme {
       brightness: Brightness.light,
       scaffoldBackgroundColor: lightBackground,
       colorScheme: const ColorScheme.light(
-        primary: primary,
+        primary: Color(0xFF0F2F6A),
         onPrimary: Colors.white,
-        secondary: secondary,
+        secondary: Color(0xFF0F2F6A),
         onSecondary: Colors.white,
-        tertiary: tertiary,
+        tertiary: Color(0xFF0F2F6A),
+        onTertiary: Colors.white,
         surface: lightSurface,
-        onSurface: lightTextHighEmphasis,
-        onSurfaceVariant: lightTextMediumEmphasis,
-        outline: Color(0xFFCBD5E1),
+        onSurface: Color(0xFF0F2F6A),
+        onSurfaceVariant: Color(0xFF64748B),
+        outline: Color(0xFF94A3B8),
       ),
       textTheme: GoogleFonts.interTextTheme(ThemeData.light().textTheme).copyWith(
         displayLarge: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: lightTextHighEmphasis).copyWith(inherit: true),
@@ -264,6 +265,14 @@ class AppTheme {
         titleTextStyle: GoogleFonts.inter(color: lightTextHighEmphasis, fontWeight: FontWeight.w600, fontSize: 16).copyWith(inherit: true),
         subtitleTextStyle: GoogleFonts.inter(color: lightTextMediumEmphasis, fontSize: 14).copyWith(inherit: true),
         iconColor: lightTextMediumEmphasis,
+      ),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: Colors.white,
+        contentTextStyle: const TextStyle(color: Color(0xFF0F2F6A), fontWeight: FontWeight.bold),
+        actionTextColor: const Color(0xFF0F2F6A),
+        behavior: SnackBarBehavior.floating,
+        elevation: 6,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {

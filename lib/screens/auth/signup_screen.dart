@@ -25,6 +25,15 @@ class _SignupScreenState extends State<SignupScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _bioController = TextEditingController();
+  final _roleController = TextEditingController();
+
+  final List<String> _suggestedRoles = [
+    'Flutter Developer', 'React Developer', 'Product Designer', 'UI/UX Designer', 
+    'Chef', 'Baker', 'Painter', 'Fashion Designer', 'Photographer', 'Videographer',
+    'Financial Analyst', 'Marketing Manager', 'Content Creator', 'Social Media Manager',
+    'Fitness Trainer', 'Yoga Instructor', 'Entrepreneur', 'Student', 'Teacher', 'Architect',
+    'Interior Designer', 'Makeup Artist', 'Barber', 'Counselor', 'Data Scientist', 'Software Engineer'
+  ];
 
   bool _isLoading = false;
   String? _generatedOTP;
@@ -42,6 +51,7 @@ class _SignupScreenState extends State<SignupScreen> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _bioController.dispose();
+    _roleController.dispose();
     super.dispose();
   }
 
@@ -124,6 +134,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
     if (!mounted) return;
     if (ProfanityFilterService.hasProfanity(_nameController.text) ||
+        _usernameController.text.isEmpty ||
         ProfanityFilterService.hasProfanity(_usernameController.text) ||
         ProfanityFilterService.hasProfanity(_bioController.text)) {
       showProfanityWarning(context);
@@ -237,7 +248,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: context.primary,
-                        foregroundColor: Colors.white,
+                        foregroundColor: context.onPrimary,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
@@ -278,11 +289,11 @@ class _SignupScreenState extends State<SignupScreen> {
                               }
                             },
                       child: isVerifying
-                          ? const SizedBox(
+                          ? SizedBox(
                               width: 24,
                               height: 24,
                               child: CircularProgressIndicator(
-                                color: Colors.white,
+                                color: context.onPrimary,
                                 strokeWidth: 2,
                               ),
                             )
@@ -334,9 +345,12 @@ class _SignupScreenState extends State<SignupScreen> {
             'username': _usernameController.text.trim(),
             'email': _emailController.text.trim(),
             'bio': _bioController.text.trim(),
+            'role': _roleController.text.trim(),
             'createdAt': FieldValue.serverTimestamp(),
             'followers': 0,
             'following': 0,
+            'skills': [],
+            'onboardingCompleted': false,
           });
 
       return true;
@@ -394,28 +408,65 @@ class _SignupScreenState extends State<SignupScreen> {
             .doc(user.uid)
             .get();
 
+        bool needsOnboarding = true;
+
         if (!userDoc.exists) {
+          final String rawPrefix = user.email?.split('@')[0] ?? 'user_${user.uid.substring(0, 5)}';
+          final String emailPrefix = rawPrefix.replaceAll(' ', '').toLowerCase();
+          
+          String derivedName = user.displayName ?? '';
+          if (derivedName.trim().isEmpty) {
+            derivedName = emailPrefix[0].toUpperCase() + emailPrefix.substring(1);
+          }
+          if (derivedName.trim().isEmpty) derivedName = 'New User';
+
           await FirebaseFirestore.instance
               .collection('users')
               .doc(user.uid)
               .set({
                 'uid': user.uid,
-                'name': user.displayName ?? 'New User',
+                'name': derivedName,
                 'email': user.email,
-                'username':
-                    user.email?.split('@')[0] ??
-                    'user_${user.uid.substring(0, 5)}',
+                'username': emailPrefix,
                 'profileImageUrl': user.photoURL,
                 'createdAt': FieldValue.serverTimestamp(),
                 'followers': 0,
                 'following': 0,
                 'bio': 'Hi there! I am using Skillze.',
+                'onboardingCompleted': false,
+                'skills': [],
               });
+        } else {
+          final data = userDoc.data()!;
+          final List skills = data['skills'] ?? [];
+          final bool onboardingCompleted = data['onboardingCompleted'] ?? false;
+          
+          // If name or username is missing/default, update from Google info
+          if (data['name'] == 'New User' || data['name'] == null || data['username'] == null || data['username'] == '') {
+            final String rawPrefix = user.email?.split('@')[0] ?? 'user_${user.uid.substring(0, 5)}';
+            final String emailPrefix = rawPrefix.replaceAll(' ', '').toLowerCase();
+            
+            String derivedName = data['name'] ?? '';
+            if (derivedName == 'New User' || derivedName.isEmpty) {
+              derivedName = user.displayName ?? (emailPrefix[0].toUpperCase() + emailPrefix.substring(1));
+            }
+
+            await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+              'name': derivedName,
+              'username': data['username'] ?? emailPrefix,
+              'profileImageUrl': user.photoURL,
+            });
+          }
+          
+          if (skills.isNotEmpty && onboardingCompleted) {
+            needsOnboarding = false;
+          }
         }
 
         if (!mounted) return;
         await PushNotificationService.updateToken();
-        if (!userDoc.exists) {
+        
+        if (needsOnboarding) {
           Navigator.pushReplacementNamed(context, '/skills');
         } else {
           Navigator.pushReplacementNamed(context, '/main');
@@ -481,7 +532,7 @@ class _SignupScreenState extends State<SignupScreen> {
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
+                                color: Colors.black.withValues(alpha: 0.05),
                                 blurRadius: 2,
                                 offset: const Offset(0, 1),
                               ),
@@ -558,6 +609,68 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 const SizedBox(height: 16),
 
+                // Role field with Autocomplete
+                Autocomplete<String>(
+                  optionsBuilder: (TextEditingValue textEditingValue) {
+                    if (textEditingValue.text.isEmpty) {
+                      return const Iterable<String>.empty();
+                    }
+                    return _suggestedRoles.where((role) {
+                      return role.toLowerCase().contains(textEditingValue.text.toLowerCase());
+                    });
+                  },
+                  onSelected: (String selection) {
+                    _roleController.text = selection;
+                  },
+                  fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                     // Sync internal controller
+                    if (_roleController.text != controller.text && _roleController.text.isNotEmpty && controller.text.isEmpty) {
+                      controller.text = _roleController.text;
+                    }
+
+                    return CleanTextField(
+                      label: 'PROFESSIONAL ROLE',
+                      hintText: 'e.g. Chef, Painter, Developer',
+                      controller: controller,
+                      focusNode: focusNode,
+                      prefixIcon: Icons.work_outline,
+                      onChanged: (val) {
+                        _roleController.text = val;
+                      },
+                    );
+                  },
+                  optionsViewBuilder: (context, onSelected, options) {
+                    return Align(
+                      alignment: Alignment.topLeft,
+                      child: Material(
+                        elevation: 10,
+                        borderRadius: BorderRadius.circular(16),
+                        color: context.surfaceColor,
+                        shadowColor: Colors.black.withValues(alpha: 0.1),
+                        child: Container(
+                          width: MediaQuery.of(context).size.width - 48,
+                          constraints: const BoxConstraints(maxHeight: 250),
+                          child: ListView.separated(
+                            padding: EdgeInsets.zero,
+                            shrinkWrap: true,
+                            itemCount: options.length,
+                            separatorBuilder: (context, index) => Divider(height: 1, color: context.border.withValues(alpha: 0.5)),
+                            itemBuilder: (BuildContext context, int index) {
+                              final String option = options.elementAt(index);
+                              return ListTile(
+                                dense: true,
+                                title: Text(option, style: TextStyle(color: context.textHigh)),
+                                onTap: () => onSelected(option),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 16),
+
                 // Password field
                 CleanTextField(
                   label: 'PASSWORD',
@@ -597,7 +710,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
-                          color: context.primary.withOpacity(0.2),
+                          color: context.primary.withValues(alpha: 0.2),
                           blurRadius: 15,
                           offset: const Offset(0, 10),
                           spreadRadius: -3,
@@ -606,20 +719,20 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                     child: Center(
                       child: _isLoading
-                          ? const SizedBox(
+                          ? SizedBox(
                               width: 24,
                               height: 24,
                               child: CircularProgressIndicator(
-                                color: Colors.white,
+                                color: context.isDark ? Colors.black : Colors.white,
                                 strokeWidth: 2,
                               ),
                             )
-                          : const Text(
+                          : Text(
                               'Sign up',
                               style: TextStyle(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 16,
-                                color: Colors.white,
+                                color: context.isDark ? Colors.black : Colors.white,
                               ),
                             ),
                     ),
@@ -672,7 +785,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         border: Border.all(color: context.border),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 2,
                             offset: const Offset(0, 1),
                           ),

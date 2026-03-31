@@ -15,6 +15,7 @@ class CleanTextField extends StatefulWidget {
   final String? errorText;
   final IconData? suffixIcon;
   final VoidCallback? onSuffixTap;
+  final FocusNode? focusNode;
 
   const CleanTextField({
     super.key,
@@ -31,14 +32,18 @@ class CleanTextField extends StatefulWidget {
     this.errorText,
     this.suffixIcon,
     this.onSuffixTap,
+    this.focusNode,
   });
+
 
   @override
   State<CleanTextField> createState() => _CleanTextFieldState();
 }
 
 class _CleanTextFieldState extends State<CleanTextField> {
-  final FocusNode _focusNode = FocusNode();
+  FocusNode? _localFocusNode;
+  FocusNode get _effectiveFocusNode => widget.focusNode ?? _localFocusNode!;
+  
   bool _isFocused = false;
   late bool _obscureText;
 
@@ -46,21 +51,26 @@ class _CleanTextFieldState extends State<CleanTextField> {
   void initState() {
     super.initState();
     _obscureText = widget.isPassword;
-    _focusNode.addListener(_handleFocusChange);
+    if (widget.focusNode == null) {
+      _localFocusNode = FocusNode();
+    }
+    _effectiveFocusNode.addListener(_handleFocusChange);
   }
 
   @override
   void dispose() {
-    _focusNode.removeListener(_handleFocusChange);
-    _focusNode.dispose();
+    _effectiveFocusNode.removeListener(_handleFocusChange);
+    _localFocusNode?.dispose();
     super.dispose();
   }
 
+
   void _handleFocusChange() {
     setState(() {
-      _isFocused = _focusNode.hasFocus;
+      _isFocused = _effectiveFocusNode.hasFocus;
     });
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -122,7 +132,8 @@ class _CleanTextFieldState extends State<CleanTextField> {
               Expanded(
                 child: TextField(
                   controller: widget.controller,
-                  focusNode: _focusNode,
+                  focusNode: _effectiveFocusNode,
+
                   autofocus: widget.autofocus,
                   obscureText: _obscureText,
                   keyboardType: widget.keyboardType,

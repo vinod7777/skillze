@@ -110,21 +110,21 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                   onPressed: _isLoading ? null : _getCurrentLocation,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: context.primary,
-                    foregroundColor: Colors.white,
+                    foregroundColor: context.onPrimary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
                     elevation: 0,
                   ),
                   child: _isLoading
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          child: CircularProgressIndicator(color: context.onPrimary, strokeWidth: 2),
                         )
-                      : const Text(
+                      : Text(
                           'Allow Access',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: context.onPrimary),
                         ),
                 ),
               ),

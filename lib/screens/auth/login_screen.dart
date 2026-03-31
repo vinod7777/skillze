@@ -57,30 +57,72 @@ class _LoginScreenState extends State<LoginScreen> {
             .doc(user.uid)
             .get();
 
+        bool needsOnboarding = true;
+
         if (!userDoc.exists) {
+          // DERIVE NAME FROM EMAIL: user.displayName often contains full names, 
+          // but if user specifically wants it from the email, we provide it.
+          // ENSURE NO SPACES IN USERNAME
+          final String rawPrefix = user.email?.split('@')[0] ?? 'user_${user.uid.substring(0, 5)}';
+          final String emailPrefix = rawPrefix.replaceAll(' ', '').toLowerCase();
+          
+          // Use displayName if exists, otherwise a pretty version of email prefix
+          String derivedName = user.displayName ?? '';
+          if (derivedName.trim().isEmpty) {
+            // Capitalize for better look (keep spaces in display name if any, but prefix has none)
+            derivedName = emailPrefix[0].toUpperCase() + emailPrefix.substring(1);
+          }
+          if (derivedName.trim().isEmpty) derivedName = 'Skillze User';
+
           // Create user document if it doesn't exist
           await FirebaseFirestore.instance
               .collection('users')
               .doc(user.uid)
               .set({
                 'uid': user.uid,
-                'name': user.displayName ?? 'New User',
+                'name': derivedName,
                 'email': user.email,
-                'username':
-                    user.email?.split('@')[0] ??
-                    'user_${user.uid.substring(0, 5)}',
+                'username': emailPrefix,
                 'profileImageUrl': user.photoURL,
                 'createdAt': FieldValue.serverTimestamp(),
                 'followers': 0,
                 'following': 0,
                 'bio': 'Hi there! I am using Skillze.',
+                'onboardingCompleted': false,
+                'skills': [],
               });
+        } else {
+          final data = userDoc.data()!;
+          final List skills = data['skills'] ?? [];
+          final bool onboardingCompleted = data['onboardingCompleted'] ?? false;
+          
+          // If name or username is missing/default, update from Google info
+          if (data['name'] == 'New User' || data['name'] == null || data['username'] == null || data['username'] == '') {
+            final String rawPrefix = user.email?.split('@')[0] ?? 'user_${user.uid.substring(0, 5)}';
+            final String emailPrefix = rawPrefix.replaceAll(' ', '').toLowerCase();
+            
+            String derivedName = data['name'] ?? '';
+            if (derivedName == 'New User' || derivedName.isEmpty) {
+              derivedName = user.displayName ?? (emailPrefix[0].toUpperCase() + emailPrefix.substring(1));
+            }
+
+            await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+              'name': derivedName,
+              'username': data['username'] ?? emailPrefix,
+              'profileImageUrl': user.photoURL,
+            });
+          }
+          
+          if (skills.isNotEmpty && onboardingCompleted) {
+            needsOnboarding = false;
+          }
         }
 
         if (!mounted) return;
         await PushNotificationService.updateToken();
         if (!mounted) return;
-        if (!userDoc.exists) {
+        
+        if (needsOnboarding) {
           Navigator.pushReplacementNamed(context, '/skills');
         } else {
           Navigator.pushReplacementNamed(context, '/main');

@@ -54,8 +54,15 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
   List<DocumentSnapshot> _allFetchedPosts = [];
   List<DocumentSnapshot> _displayedPosts = [];
   bool _isLoadingPosts = false;
-  final Set<String> _availableSkills = {'All Skills', 'Flutter', 'React Native', 'Node.js', 'Python', 'UI/UX', 'Dart', 'Javascript', 'Firebase', 'Java', 'Kotlin', 'Swift', 'C++', 'Go', 'Rust'};
-  final Set<String> _availableRoles = {'All Roles', 'Frontend Dev', 'Backend Dev', 'Full Stack', 'Designer', 'Product Manager', 'Data Scientist', 'DevOps', 'Mobile Dev', 'QA Engineer'};
+  final Set<String> _availableSkills = {
+    'All Skills', 'Flutter', 'React Native', 'Node.js', 'Python', 'UI/UX', 'Photography', 'Marketing', 'Business', 'Fitness', 'Cooking', 'Gardening', 'Music', 'Design', 'Sales', 'Finance',
+    'Baking', 'Painting', 'Sketching', 'Fashion Design', 'Public Speaking', 'Yoga', 'Meditation', 'Social Media', 'Content Creation', 'SEO', 'Public Relations', 'Data Science', 'AI'
+  };
+  final Set<String> _availableRoles = {
+    'All Roles', 'Software Engineer', 'Product Designer', 'Marketing Manager', 'Photographer', 'Entrepreneur', 'Fitness Coach', 'Chef', 'Student', 'Accountant', 'Sales Rep', 'Content Creator',
+    'Baker', 'Painter', 'Makeup Artist', 'Barber', 'Counselor', 'Architect', 'Social Media Manager', 'Voice Actor', 'Music Producer', 'Financial Analyst', 'Project Manager', 'Lawyer'
+  };
+
 
   @override
   void initState() {
@@ -304,8 +311,12 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
           _isLoadingLocation = false;
         });
         // Center map to new accurate position if on map
-        if (showMap) {
-          _mapController.move(_userLocation!, 14.0);
+        if (showMap && _userLocation != null) {
+          try {
+            _mapController.move(_userLocation!, 14.0);
+          } catch (e) {
+            debugPrint("Map move error: $e");
+          }
         }
       }
 
@@ -779,14 +790,15 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                                     spreadRadius: 2,
                                   ),
                                 ],
-                                color: context.accent,
+                                color: context.isDark ? Colors.black : const Color(0xFF0F2F6A),
+                                border: context.isDark ? Border.all(color: Colors.white, width: 2) : null,
                               ),
                               child: CircleAvatar(
                                 radius: 22,
                                 backgroundColor: Colors.transparent,
-                                child: Icon(
+                                child: const Icon(
                                   Icons.my_location,
-                                  color: context.onAccent,
+                                  color: Colors.white,
                                   size: 22,
                                 ),
                               ),
@@ -798,13 +810,14 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                                 vertical: 3,
                               ),
                               decoration: BoxDecoration(
-                                color: context.accent,
+                                color: context.isDark ? Colors.black : const Color(0xFF0F2F6A),
                                 borderRadius: BorderRadius.circular(8),
+                                border: context.isDark ? Border.all(color: Colors.white, width: 0.5) : null,
                               ),
                               child: Text(
                                 context.t('you'),
-                                style: TextStyle(
-                                  color: context.onAccent,
+                                style: const TextStyle(
+                                  color: Colors.white,
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -832,16 +845,15 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black45.withOpacity(0.5),
+                                      color: context.isDark ? Colors.white24 : Colors.black26,
                                       blurRadius: 4,
                                       offset: const Offset(0, 2),
                                     ),
                                   ],
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      context.primary,
-                                      context.primary.withOpacity(0.7),
-                                    ],
+                                  color: context.isDark ? Colors.black : const Color(0xFF0F2F6A),
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 1.5,
                                   ),
                                 ),
                                 child: UserAvatar(
@@ -1357,7 +1369,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                       duration: const Duration(milliseconds: 200),
                       style: TextStyle(
                         fontFamily: 'Inter',
-                        color: !_isPostTab ? Colors.white : context.textMed,
+                        color: !_isPostTab ? context.onPrimary : context.textMed,
                         fontWeight: !_isPostTab ? FontWeight.w700 : FontWeight.w500,
                         fontSize: 14,
                       ),
@@ -1375,7 +1387,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                       duration: const Duration(milliseconds: 200),
                       style: TextStyle(
                         fontFamily: 'Inter',
-                        color: _isPostTab ? Colors.white : context.textMed,
+                        color: _isPostTab ? context.onPrimary : context.textMed,
                         fontWeight: _isPostTab ? FontWeight.w700 : FontWeight.w500,
                         fontSize: 14,
                       ),

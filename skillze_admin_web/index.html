@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Skillze Admin | Dashboard</title>
+  <!-- Main Styling -->
+  <link rel="stylesheet" href="assets/abyssal.css">
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@700;800&display=swap" rel="stylesheet">
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <style>
+    /* Inline overrides or specific dashboard tweaks */
+    #mainChart { height: 320px !important; width: 100% !important; }
+    .skill-pill { display: inline-block; padding: 2px 8px; border-radius: 4px; background: var(--surface-bright); color: var(--primary); font-size: 11px; margin-right: 4px; }
+  </style>
+</head>
+<body>
+
+  <div class="admin-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="logo-section">
+        <div class="logo-dot"></div>
+        <h2 class="brand-text">Skillze <span style="color: var(--on-surface-variant); font-size: 0.8rem; font-weight: 500;">Admin</span></h2>
+      </div>
+
+      <nav class="nav-links">
+        <a href="index.html" class="nav-item active">
+          <i class="bi bi-grid-1x2-fill"></i> Dashboard
+        </a>
+        <a href="users.html" class="nav-item">
+          <i class="bi bi-people-fill"></i> Users
+        </a>
+        <a href="posts.html" class="nav-item">
+          <i class="bi bi-collection-play-fill"></i> Posts
+        </a>
+        <a href="stories.html" class="nav-item">
+          <i class="bi bi-clock-history"></i> Stories
+        </a>
+        <a href="chats.html" class="nav-item">
+          <i class="bi bi-chat-dots-fill"></i> Chats
+        </a>
+        <a href="moderation.html" class="nav-item">
+          <i class="bi bi-shield-lock-fill"></i> Moderation
+        </a>
+        <a href="skills.html" class="nav-item">
+          <i class="bi bi-tags-fill"></i> Taxonomies
+        </a>
+        <a href="broadcast.html" class="nav-item">
+          <i class="bi bi-broadcast"></i> Broadcast
+        </a>
+      </nav>
+
+      <div style="margin-top: auto;">
+        <a href="login.html" class="nav-item" style="color: var(--error);">
+          <i class="bi bi-box-arrow-right"></i> Logout
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Viewport -->
+    <main class="main-viewport">
+      <header class="page-header">
+        <h1 class="page-title">Platform Insights</h1>
+        <p style="color: var(--on-surface-variant);">Real-time monitoring of the Skillze ecosystem.</p>
+      </header>
+
+      <!-- Key Metrics -->
+      <section class="stats-grid">
+        <div class="stat-card">
+          <p class="stat-label">Total Skillers</p>
+          <div class="stat-value" id="totalUsersStat">0</div>
+          <div class="stat-trend trend-up"><i class="bi bi-arrow-up"></i> Live Tracking</div>
+        </div>
+        <div class="stat-card">
+          <p class="stat-label">Active Connections</p>
+          <div class="stat-value" id="totalPostsStat">0</div>
+          <div class="stat-trend trend-up"><i class="bi bi-arrow-up"></i> Total Posts</div>
+        </div>
+        <div class="stat-card">
+          <p class="stat-label">Unresolved Reports</p>
+          <div class="stat-value" id="totalReportsStat">0</div>
+          <div class="stat-trend" id="reportsAlert" style="color: var(--on-surface-variant);"><i class="bi bi-shield-check"></i> System Secure</div>
+        </div>
+        <div class="stat-card">
+          <p class="stat-label">Taxonomy Depth</p>
+          <div class="stat-value">742</div>
+          <div class="stat-trend trend-up"><i class="bi bi-tags"></i> Categories</div>
+        </div>
+      </section>
+
+      <!-- Visualization Grid -->
+      <section class="charts-section">
+        <!-- Main Growth Chart -->
+        <!-- Content Performance Chart -->
+        <div class="chart-container">
+          <h3 style="margin-bottom: 20px; font-size: 1.1rem;">Content Performance</h3>
+          <canvas id="contentChart" style="height: 320px !important;"></canvas>
+        </div>
+
+        <!-- Top Skills Right Rail -->
+        <div class="chart-container" style="min-height: auto;">
+          <h3 style="margin-bottom: 20px; font-size: 1.1rem;">Trending Skills</h3>
+          <ul id="trendingSkillsList" style="list-style: none; display: flex; flex-direction: column; gap: 15px;">
+            <li style="text-align: center; color: var(--on-surface-variant); font-size: 0.8rem; padding: 20px;">Analyzing community talents...</li>
+          </ul>
+          <button class="btn-primary" style="width: 100%; margin-top: 25px; padding: 10px;" onclick="window.location.href='skills.html'">View Full List</button>
+        </div>
+      </section>
+
+      <!-- Recent Activity Table (No-Line Rule Implementation) -->
+      <section style="margin-top: var(--spacing-xl);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: var(--spacing-md);">
+           <h3 style="margin: 0;">Recent Onboarding Activity</h3>
+           <input type="text" id="activitySearch" placeholder="Search onboarded skillers..." style="background: var(--surface-high); border: none; padding: 10px 15px; border-radius: 8px; color: white; width: 220px; font-size: 0.85rem;">
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Skiller</th>
+              <th>Primary Role</th>
+              <th>Recent Interests</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="activityListBody">
+            <tr><td colspan="5" style="text-align: center; padding: 40px;">Listening for live onboardings...</td></tr>
+          </tbody>
+        </table>
+        
+        <footer style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center; color: var(--on-surface-variant); font-size: 0.8rem; padding: 0 10px 20px;">
+           <div id="footerText">Showing activities...</div>
+           <div style="display: flex; gap: 20px; font-weight: 700;">
+              <span id="prevBtn" onclick="prevPage()" style="cursor: pointer; color: var(--primary);">PREVIOUS</span>
+              <span id="nextBtn" onclick="nextPage()" style="cursor: pointer; color: var(--on-surface);">NEXT</span>
+           </div>
+        </footer>
+      </section>
+    </main>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script type="module">
+    import { trackDashboardStats, listenToUsers, formatTimestamp, listenToTaxonomies } from './assets/data-service.js';
+
+    const usersStat = document.getElementById('totalUsersStat');
+    const postsStat = document.getElementById('totalPostsStat');
+    const reportsStat = document.getElementById('totalReportsStat');
+    const taxonomyStat = document.querySelector('.stats-grid .stat-card:last-child .stat-value');
+
+    const listBody = document.getElementById('activityListBody');
+    const footerText = document.getElementById('footerText');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const searchInput = document.getElementById('activitySearch');
+    const trendingList = document.getElementById('trendingSkillsList');
+
+    let allUsers = [];
+    let filteredUsers = [];
+    let currentPage = 1;
+    const pageSize = 10;
+
+    // Start live tracking
+    trackDashboardStats((stats) => {
+      if (usersStat) usersStat.innerText = stats.users.toLocaleString();
+      if (postsStat) postsStat.innerText = stats.posts.toLocaleString();
+      if (reportsStat) reportsStat.innerText = stats.reports.toLocaleString();
+    });
+
+    listenToTaxonomies((tax) => {
+      if (taxonomyStat) taxonomyStat.innerText = tax.length.toLocaleString();
+    });
+
+    function processActivities() {
+      const term = searchInput ? searchInput.value.toLowerCase() : '';
+      let combined = [...allUsers];
+      
+      if (term) {
+        combined = combined.filter(u => 
+          (u.name || u.displayName || '').toLowerCase().includes(term) ||
+          (u.username || '').toLowerCase().includes(term) ||
+          (u.role || '').toLowerCase().includes(term)
+        );
+      }
+
+      combined.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+      filteredUsers = combined;
+      renderGrid();
+    }
+
+    function renderGrid() {
+      if (!listBody) return;
+      const start = (currentPage - 1) * pageSize;
+      const end = start + pageSize;
+      const pageData = filteredUsers.slice(start, end);
+
+      if (filteredUsers.length === 0) {
+        listBody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;">No matching activities found.</td></tr>';
+        footerText.innerText = "0 matches";
+        prevBtn.style.display = 'none';
+        nextBtn.style.display = 'none';
+        return;
+      }
+
+      listBody.innerHTML = pageData.map(user => {
+        const name = user.name || user.displayName || user.username || 'Skiller';
+        const role = user.role || 'Member';
+        return `
+          <tr>
+            <td>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 32px; height: 32px; border-radius: 50%; background: #3bbffa; display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; font-size: 12px; overflow:hidden;">
+                  <img src="${user.profileImageUrl || `https://ui-avatars.com/api/?name=${name}`}" style="width:100%; height:100%; object-fit:cover;">
+                </div>
+                <div>
+                  <div style="font-weight: 600; font-size: 14px;">${name}</div>
+                  <div style="font-size: 11px; color: var(--on-surface-variant);">@${user.username || 'user'}</div>
+                </div>
+              </div>
+            </td>
+            <td style="font-size: 13px;">${role}</td>
+            <td>
+              ${(user.skills || []).slice(0, 3).map(s => `<span class="skill-pill">${s}</span>`).join('')}
+            </td>
+            <td><span class="badge ${user.onboardingCompleted ? 'badge-success' : 'badge-pending'}">${user.onboardingCompleted ? 'Verified' : 'Onboarding'}</span></td>
+            <td><i class="bi bi-chat-right-text" style="cursor: pointer; opacity: 0.6;"></i></td>
+          </tr>
+      `}).join('');
+
+      const total = filteredUsers.length;
+      footerText.innerText = `Showing ${start + 1}-${Math.min(end, total)} of ${total} events`;
+      
+      prevBtn.style.display = 'inline';
+      nextBtn.style.display = 'inline';
+      prevBtn.style.opacity = currentPage === 1 ? '0.3' : '1';
+      prevBtn.style.pointerEvents = currentPage === 1 ? 'none' : 'auto';
+      nextBtn.style.opacity = end >= total ? '0.3' : '1';
+      nextBtn.style.pointerEvents = end >= total ? 'none' : 'auto';
+    }
+
+    if (searchInput) {
+      searchInput.addEventListener('input', () => {
+        currentPage = 1;
+        processActivities();
+      });
+    }
+
+    window.nextPage = () => { if ((currentPage * pageSize) < filteredUsers.length) { currentPage++; renderGrid(); } };
+    window.prevPage = () => { if (currentPage > 1) { currentPage--; renderGrid(); } };
+
+    listenToUsers((users) => {
+        allUsers = users;
+        processActivities();
+
+        // Trending Skills Rail
+        if (trendingList) {
+          const skillMap = {};
+          users.forEach(u => (u.skills || u.interested_skills || []).forEach(s => skillMap[s] = (skillMap[s] || 0) + 1));
+          const topSkills = Object.entries(skillMap).sort((a,b) => b[1] - a[1]).slice(0, 5);
+          
+          if (topSkills.length === 0) {
+            trendingList.innerHTML = '<li style="text-align: center; color: var(--on-surface-variant); font-size: 0.8rem; padding: 20px;">No skills identified yet.</li>';
+          } else {
+            trendingList.innerHTML = topSkills.map(([skill, count], idx) => `
+              <li style="display: flex; justify-content: space-between; align-items: center;">
+                <span><span class="skill-pill">#${idx+1}</span> ${skill}</span>
+                <span style="font-weight: 700; ${idx === 0 ? 'color: var(--primary);' : ''}">${count}</span>
+              </li>
+            `).join('');
+          }
+        }
+    });
+
+    // Initialize Dashboard Chart
+    document.addEventListener('DOMContentLoaded', () => {
+      const ctx = document.getElementById('mainChart').getContext('2d');
+      const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+      gradient.addColorStop(0, 'rgba(59, 191, 250, 0.4)');   
+      gradient.addColorStop(1, 'rgba(59, 191, 250, 0)');
+
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+          datasets: [{
+            label: 'New Users',
+            data: [650, 590, 800, 810, 560, 950, 1200],
+            borderColor: '#3bbffa',
+            backgroundColor: gradient,
+            borderWidth: 4,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#3bbffa',
+            pointRadius: 0,
+            pointHoverRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false }, ticks: { color: '#a3aac4' } },
+            x: { grid: { display: false }, ticks: { color: '#a3aac4' } }
+          }
+        }
+      });
+
+      // Initialize Content Performance Chart
+      const contentCtx = document.getElementById('contentChart').getContext('2d');
+      new Chart(contentCtx, {
+        type: 'bar',
+        data: {
+          labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+          datasets: [
+            {
+              label: 'Posts',
+              data: [120, 190, 300, 250, 420, 580, 640],
+              backgroundColor: '#3bbffa',
+              borderRadius: 8
+            },
+            {
+              label: 'Stories',
+              data: [80, 150, 220, 180, 310, 420, 530],
+              backgroundColor: '#667eea',
+              borderRadius: 8
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { 
+            legend: { 
+                display: true, 
+                position: 'top',
+                labels: { color: '#a3aac4' } 
+            } 
+          },
+          scales: {
+            y: { grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false }, ticks: { color: '#a3aac4' } },
+            x: { grid: { display: false }, ticks: { color: '#a3aac4' } }
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>

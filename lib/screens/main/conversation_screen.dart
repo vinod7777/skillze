@@ -1521,7 +1521,7 @@ class _ConversationScreenState extends State<ConversationScreen>
                       : const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
                     color: isMe 
-                        ? (context.isDark ? Colors.white : context.primary)
+                        ? context.primary
                         : (context.isDark ? context.surfaceLightColor : Colors.white),
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(20),
@@ -1614,12 +1614,12 @@ class _ConversationScreenState extends State<ConversationScreen>
                           highlightText: _searchQuery,
                           onMentionTap: (u) => _navigateToProfileByUsername(u),
                           style: TextStyle(
-                            color: isMe ? Colors.black : context.textHigh,
+                            color: isMe ? context.onPrimary : context.textHigh,
                             fontSize: 15,
                             height: 1.3,
                           ),
                           linkStyle: TextStyle(
-                            color: isMe ? Colors.white : context.primary,
+                            color: isMe ? context.onPrimary.withOpacity(0.8) : context.primary,
                             fontWeight: FontWeight.bold,
                             decoration: TextDecoration.underline,
                           ),
@@ -1637,12 +1637,12 @@ class _ConversationScreenState extends State<ConversationScreen>
                             backgroundColor: Colors.transparent,
                             errorWidget: const SizedBox.shrink(),
                             titleStyle: TextStyle(
-                              color: isMe ? Colors.black : context.textHigh,
+                              color: isMe ? context.onPrimary : context.textHigh,
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
                             ),
                             bodyStyle: TextStyle(
-                              color: isMe ? Colors.black54 : context.textMed,
+                              color: isMe ? context.onPrimary.withOpacity(0.7) : context.textMed,
                               fontSize: 12,
                             ),
                             borderRadius: 12,

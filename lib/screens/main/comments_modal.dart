@@ -196,7 +196,11 @@ class _CommentsModalState extends State<CommentsModal> {
     if (user == null) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Please log in to comment')));
+      ).showSnackBar(SnackBar(
+        content: Text('Please log in to comment', style: TextStyle(color: context.onPrimary)),
+        backgroundColor: context.primary,
+        action: SnackBarAction(label: 'Close', textColor: context.onPrimary.withOpacity(0.8), onPressed: () {}),
+      ));
       return;
     }
 
@@ -324,7 +328,11 @@ class _CommentsModalState extends State<CommentsModal> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed to post comment: $e')));
+        ).showSnackBar(SnackBar(
+          content: Text('Failed to post comment: $e', style: TextStyle(color: context.onPrimary)),
+          backgroundColor: context.primary,
+          action: SnackBarAction(label: 'Close', textColor: context.onPrimary.withOpacity(0.8), onPressed: () {}),
+        ));
       }
     } finally {
       if (mounted) {
@@ -768,17 +776,17 @@ class _CommentsModalState extends State<CommentsModal> {
                         color: context.primary,
                       ),
                       child: _isPosting
-                          ? const SizedBox(
+                          ? SizedBox(
                               width: 20,
                               height: 20,
                               child: CircularProgressIndicator(
-                                color: Colors.white,
+                                color: context.onPrimary,
                                 strokeWidth: 2,
                               ),
                             )
-                          : const Icon(
+                          : Icon(
                               Icons.send_rounded,
-                              color: Colors.white,
+                              color: context.onPrimary,
                               size: 20,
                             ),
                     ),

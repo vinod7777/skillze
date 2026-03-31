@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Skillze Admin | Authorization</title>
+  <link rel="stylesheet" href="assets/abyssal.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Manrope:wght@800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at center, #091328 0%, #060e20 100%);
+    }
+    .login-container {
+      width: 100%;
+      max-width: 420px;
+      padding: var(--spacing-lg);
+      text-align: center;
+    }
+    .login-form {
+      margin-top: var(--spacing-lg);
+      text-align: left;
+    }
+    .input-group {
+      margin-bottom: var(--spacing-sm);
+    }
+    .input-group label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--on-surface-variant);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .input-group input {
+      width: 100%;
+      background: var(--surface-high);
+      border: 1px solid transparent;
+      padding: 14px 18px;
+      border-radius: 12px;
+      color: var(--on-surface);
+      font-family: inherit;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .input-group input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 15px var(--primary-glow);
+    }
+    .error-box {
+      color: var(--error);
+      font-size: 0.85rem;
+      margin-top: 10px;
+      text-align: center;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-container">
+    <div class="logo-dot" style="margin: 0 auto 15px; width: 24px; height: 24px; box-shadow: 0 0 20px rgba(59, 191, 250, 0.5);"></div>
+    <h1 style="font-size: 2.5rem; margin-bottom: 8px;">Admin Login</h1>
+    <p style="color: var(--on-surface-variant); font-size: 0.9rem;">Skillze Content Command Center</p>
+
+    <div class="glass-panel login-form">
+      <div class="input-group">
+        <label>Admin Email</label>
+        <input type="email" id="email" placeholder="admin@skillze.com">
+      </div>
+      <div class="input-group">
+        <label>Password</label>
+        <input type="password" id="password" placeholder="••••••••">
+      </div>
+      
+      <div id="errorBox" class="error-box">Invalid credentials or access denied.</div>
+
+      <button id="loginBtn" class="btn-primary" style="width: 100%; margin-top: 15px; padding: 16px;">
+        Authorize Session
+      </button>
+
+      <button id="setupAdminBtn" style="width: 100%; margin-top: 10px; padding: 10px; background: transparent; border: 1px solid var(--on-surface-variant); color: var(--on-surface-variant); border-radius: 12px; cursor: pointer; font-size: 0.7rem;">
+        Setup Admin Account
+      </button>
+
+      <p style="text-align: center; margin-top: 20px; font-size: 0.8rem; color: var(--on-surface-variant);">
+        Only authorized administrators can access this environment.
+      </p>
+    </div>
+  </div>
+
+  <script type="module">
+     import { auth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from './assets/firebase-config.js';
+
+     const loginBtn = document.getElementById('loginBtn');
+     const emailInput = document.getElementById('email');
+     const passInput = document.getElementById('password');
+     const errorBox = document.getElementById('errorBox');
+      const setupBtn = document.getElementById('setupAdminBtn');
+ 
+      // Setup Admin Account Routine
+      if (setupBtn) {
+        setupBtn.addEventListener('click', async () => {
+          setupBtn.innerText = "Initializing Backend...";
+          setupBtn.disabled = true;
+          try {
+            // 1. Create the account
+            await createUserWithEmailAndPassword(auth, "admin@skillze.app", "skillzeadmin");
+            
+            // 2. Automatically log in after creation
+            await signInWithEmailAndPassword(auth, "admin@skillze.app", "skillzeadmin");
+            
+            alert("✅ Admin Initialized! Entering Dashboard...");
+            window.location.href = "index.html";
+          } catch (e) {
+            console.error("Setup Status:", e.code);
+            if (e.code === 'auth/email-already-in-use') {
+               alert("Admin already exists. Please log in directly with the credentials you provided.");
+            } else {
+               alert("Setup Error: " + e.message);
+            }
+            setupBtn.innerText = "Setup Admin Account";
+            setupBtn.disabled = false;
+          }
+        });
+      }
+
+     loginBtn.addEventListener('click', async () => {
+       const emailValue = emailInput.value;
+       const passValue = passInput.value;
+
+       if (!emailValue || !passValue) {
+          errorBox.style.display = 'block';
+          errorBox.innerText = "Please enter Admin Credentials.";
+          return;
+       }
+
+       loginBtn.innerText = "Authorizing Session...";
+       loginBtn.disabled = true;
+
+       try {
+         // --- REAL FIREBASE LOGIN ---
+         await signInWithEmailAndPassword(auth, emailValue, passValue);
+         window.location.href = "index.html";
+       } catch (error) {
+         console.error("Login Error:", error.code);
+         errorBox.style.display = 'block';
+         
+         if (error.code === 'auth/invalid-credential') {
+            errorBox.innerText = "Invalid Admin ID or Security Token.";
+         } else if (error.code === 'auth/user-not-found') {
+            errorBox.innerText = "No Admin account found with this email.";
+         } else {
+            errorBox.innerText = "Access Error: " + error.message;
+         }
+         
+         loginBtn.innerText = "Authorize Session";
+         loginBtn.disabled = false;
+       }
+     });
+  </script>
+</body>
+</html>

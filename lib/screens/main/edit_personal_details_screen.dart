@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/services.dart';
 import '../../services/profanity_filter_service.dart';
 import '../../utils/profanity_helper.dart';
 import '../../theme/app_theme.dart';
@@ -17,6 +18,7 @@ class _EditPersonalDetailsScreenState extends State<EditPersonalDetailsScreen> {
   final _firestore = FirebaseFirestore.instance;
   
   final _nameController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _bioController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -38,6 +40,7 @@ class _EditPersonalDetailsScreenState extends State<EditPersonalDetailsScreen> {
         final data = doc.data()!;
         setState(() {
           _nameController.text = data['name'] ?? '';
+          _usernameController.text = data['username'] ?? '';
           _emailController.text = user.email ?? '';
           _bioController.text = data['bio'] ?? '';
           _phoneController.text = data['phone'] ?? '';
@@ -60,9 +63,13 @@ class _EditPersonalDetailsScreenState extends State<EditPersonalDetailsScreen> {
       try {
         await _firestore.collection('users').doc(user.uid).update({
           'name': _nameController.text.trim(),
+          'username': _usernameController.text.replaceAll(' ', '').toLowerCase(),
           'bio': _bioController.text.trim(),
           'phone': _phoneController.text.trim(),
         });
+
+        // Update Firebase Auth display name as well
+        await user.updateDisplayName(_nameController.text.trim());
 
         if (_emailController.text.trim() != user.email) {
           await user.verifyBeforeUpdateEmail(_emailController.text.trim());
@@ -116,6 +123,13 @@ class _EditPersonalDetailsScreenState extends State<EditPersonalDetailsScreen> {
           children: [
             _buildEditField('Name', _nameController, Icons.person_outline_rounded),
             const SizedBox(height: 20),
+            _buildEditField(
+              'Username', 
+              _usernameController, 
+              Icons.alternate_email_rounded,
+              formatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
+            ),
+            const SizedBox(height: 20),
             _buildEditField('Email', _emailController, Icons.email_outlined), 
              Padding(
               padding: const EdgeInsets.only(top: 8, left: 4),
@@ -141,7 +155,8 @@ class _EditPersonalDetailsScreenState extends State<EditPersonalDetailsScreen> {
     );
   }
 
-  Widget _buildEditField(String label, TextEditingController controller, IconData icon, {bool enabled = true, int maxLines = 1}) {
+  Widget _buildEditField(String label, TextEditingController controller, IconData icon, 
+      {bool enabled = true, int maxLines = 1, List<TextInputFormatter>? formatters}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -151,6 +166,7 @@ class _EditPersonalDetailsScreenState extends State<EditPersonalDetailsScreen> {
           controller: controller,
           enabled: enabled,
           maxLines: maxLines,
+          inputFormatters: formatters,
           style: TextStyle(color: context.textHigh),
           decoration: InputDecoration(
             prefixIcon: Icon(icon, size: 20, color: context.textLow),
@@ -161,5 +177,15 @@ class _EditPersonalDetailsScreenState extends State<EditPersonalDetailsScreen> {
         ),
       ],
     );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _usernameController.dispose();
+    _emailController.dispose();
+    _bioController.dispose();
+    _phoneController.dispose();
+    super.dispose();
   }
 }

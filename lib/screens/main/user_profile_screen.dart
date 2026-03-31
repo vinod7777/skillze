@@ -137,8 +137,9 @@ class _UserProfileScreenState extends State<UserProfileScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Could not load profile details.'),
-            action: SnackBarAction(label: 'Retry', onPressed: _fetchUserData),
+            content: const Text('Could not load profile details.'),
+            backgroundColor: Colors.white,
+            action: SnackBarAction(label: 'Retry', textColor: Colors.black, onPressed: _fetchUserData),
           ),
         );
       }
@@ -223,13 +224,19 @@ class _UserProfileScreenState extends State<UserProfileScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(_isBlocked ? 'User blocked.' : 'User unblocked.'),
+            backgroundColor: Colors.white,
+            action: SnackBarAction(label: 'Close', textColor: Colors.black, onPressed: () {}),
           ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to update block status.')),
+          SnackBar(
+            content: const Text('Failed to update block status.'),
+            backgroundColor: Colors.white,
+            action: SnackBarAction(label: 'Close', textColor: Colors.black, onPressed: () {}),
+          ),
         );
       }
     }
@@ -242,7 +249,11 @@ class _UserProfileScreenState extends State<UserProfileScreen>
     Clipboard.setData(ClipboardData(text: profileText));
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Profile link copied to clipboard!')),
+      SnackBar(
+        content: const Text('Profile link copied to clipboard!'),
+        backgroundColor: Colors.white,
+        action: SnackBarAction(label: 'Close', textColor: Colors.black, onPressed: () {}),
+      ),
     );
   }
 
@@ -312,7 +323,11 @@ class _UserProfileScreenState extends State<UserProfileScreen>
               Navigator.pop(context);
               ScaffoldMessenger.of(
                 context,
-              ).showSnackBar(const SnackBar(content: Text('User reported')));
+              ).showSnackBar(SnackBar(
+                content: const Text('User reported'),
+                backgroundColor: Colors.white,
+                action: SnackBarAction(label: 'Close', textColor: Colors.black, onPressed: () {}),
+              ));
             },
           ),
           ListTile(
@@ -475,19 +490,19 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                             onTap: () {
                               ScaffoldMessenger.of(context).hideCurrentSnackBar();
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: const Text('Pinch or hold to view profile', 
-                                    style: TextStyle(color: Colors.black, fontWeight: FontWeight.w500)),
-                                  backgroundColor: Colors.white,
-                                  duration: const Duration(seconds: 2),
-                                  behavior: SnackBarBehavior.floating,
-                                  margin: const EdgeInsets.all(16),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                  action: SnackBarAction(
-                                    label: 'Close',
-                                    onPressed: () => ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+                                  SnackBar(
+                                    content: const Text('Pinch or hold to view profile', 
+                                      style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600)),
+                                    backgroundColor: Colors.white,
+                                    elevation: 8,
+                                    duration: const Duration(seconds: 2),
+                                    behavior: SnackBarBehavior.floating,
+                                    margin: const EdgeInsets.all(16),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      side: BorderSide(color: Colors.grey.withOpacity(0.05)),
+                                    ),
                                   ),
-                                ),
                               );
                             },
                             onLongPress: () => ImageViewerDialog.show(

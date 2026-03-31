@@ -40,8 +40,20 @@ class _InterestsBottomSheetState extends State<InterestsBottomSheet> {
     'Web Development', 'React', 'Vue', 'Angular', 'Next.js',
     'Backend', 'Frontend', 'Full Stack', 'Cloud', 'DevOps', 'AWS', 'Firebase',
     'Cybersecurity', 'Blockchain', 'Web3', 'Game Development', 'Unity',
-    'Marketing', 'Copywriting', 'SEO', 'Business', 'Project Management'
+    'Photography', 'Videography', 'Video Editing', 'Cinematography',
+    'Fitness', 'Yoga', 'Meditation', 'Wellness', 'Personal Training',
+    'Cooking', 'Baking', 'Pastry Arts', 'Culinary Arts',
+    'Marketing', 'Copywriting', 'SEO', 'Social Media', 'Content Creation',
+    'Public Speaking', 'Debate', 'Storytelling', 'Comedy',
+    'Sales', 'Negotiation', 'Business', 'Entrepreneurship', 'Financial Planning',
+    'Painting', 'Sketching', 'Digital Art', 'Sculpture',
+    'Music', 'Singing', 'Guitar', 'Piano', 'Drums',
+    'Gardening', 'Landscaping', 'Urban Farming', 'Sustainability',
+    'Carpentry', 'Woodworking', 'DIY', 'Interior Design',
+    'Fashion Design', 'Tailoring', 'Styling', 'Makeup Artistry',
+    'Travel Planning', 'Languages', 'Translation', 'Linguistics',
   ];
+
 
   @override
   void initState() {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'welcome_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../theme/app_theme.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -65,7 +66,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.bg,
       body: SafeArea(
         child: Column(
           children: [
@@ -92,8 +93,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   height: 8,
                   decoration: BoxDecoration(
                     color: _currentPage == index
-                        ? const Color(0xFF0F2F6A)
-                        : const Color(0xFFE2E8F0),
+                        ? context.primary
+                        : context.border,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -109,8 +110,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 child: ElevatedButton(
                   onPressed: _nextPage,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0F2F6A),
-                    foregroundColor: Colors.white,
+                    backgroundColor: context.primary,
+                    foregroundColor: context.onPrimary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -131,10 +132,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             if (_currentPage < _pages.length - 1)
               TextButton(
                 onPressed: _completeOnboarding,
-                child: const Text(
+                child: Text(
                   'Skip for now',
                   style: TextStyle(
-                    color: Color(0xFFA1A1AA),
+                    color: context.textLow,
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
@@ -172,7 +173,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             style: GoogleFonts.outfit(
               fontSize: 38,
               fontWeight: FontWeight.bold,
-              color: const Color(0xFF1B3A5C),
+              color: context.textHigh,
            
             ),
           ),
@@ -181,9 +182,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Text(
             page.description,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
-              color: Color(0xFF7A8A9E),
+              color: context.textMed,
               height: 1.5,
             ),
           ),

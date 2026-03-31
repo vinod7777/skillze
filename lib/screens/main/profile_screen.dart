@@ -8,6 +8,7 @@ import 'dart:async';
 import 'skills_screen.dart';
 import 'user_list_screen.dart';
 import 'settings_screen.dart';
+import 'edit_personal_details_screen.dart';
 import 'main_navigation.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/user_avatar.dart';
@@ -276,6 +277,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     }
 
     final name = _userData?['name'] ?? 'User';
+    final username = _userData?['username'] ?? '';
     final bio = _userData?['bio'] ?? '';
 
     return Scaffold(
@@ -333,13 +335,39 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                             ScaffoldMessenger.of(context).hideCurrentSnackBar();
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: const Text('Pinch or hold to view profile', 
-                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
-                                backgroundColor: context.primary.withOpacity(0.9),
+                                content: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.1),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.touch_app_rounded, color: context.primary, size: 20),
+                                      const SizedBox(width: 12),
+                                      const Text(
+                                        'Hold to view full profile',
+                                        style: TextStyle(
+                                          color: Colors.black,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                backgroundColor: Colors.transparent,
+                                elevation: 0,
                                 duration: const Duration(seconds: 2),
                                 behavior: SnackBarBehavior.floating,
-                                margin: const EdgeInsets.all(16),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
                               ),
                             );
                             _showProfilePhotoOptions();
@@ -451,6 +479,18 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                         color: context.textHigh,
                       ),
                     ),
+                    if (username.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(
+                          '@$username',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: context.primary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
                     if (_userData?['status'] != null && _userData!['status'].toString().isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: 2),
@@ -484,11 +524,9 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                           child: _buildActionButton(
                             'Edit Profile',
                             onTap: () {
-                              // We could navigate to a dedicated edit profile screen
-                              // but keep existing skills logic for now
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (context) => const SkillsScreen()),
+                                MaterialPageRoute(builder: (context) => const EditPersonalDetailsScreen()),
                               ).then((_) => _fetchProfile());
                             },
                           ),

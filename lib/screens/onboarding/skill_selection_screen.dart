@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/profanity_filter_service.dart';
 import '../../utils/profanity_helper.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/clean_text_field.dart';
 
 class SkillSelectionScreen extends StatefulWidget {
   final bool isEditMode;
@@ -23,8 +24,10 @@ class _SkillSelectionScreenState extends State<SkillSelectionScreen> {
   late final List<String> _selectedSkills;
   final List<String> _customSkills = [];
   final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _roleController = TextEditingController();
   bool _isSaving = false;
   String _searchQuery = "";
+  String? _roleError;
 
   @override
   void initState() {
@@ -44,11 +47,26 @@ class _SkillSelectionScreenState extends State<SkillSelectionScreen> {
         _customSkills.add(skill);
       }
     }
+    
+    _loadInitialRole();
+  }
+
+  Future<void> _loadInitialRole() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      if (mounted) {
+        setState(() {
+          _roleController.text = doc.data()?['role'] ?? '';
+        });
+      }
+    }
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _roleController.dispose();
     super.dispose();
   }
 
@@ -59,6 +77,8 @@ class _SkillSelectionScreenState extends State<SkillSelectionScreen> {
       {'name': 'Mobile Dev', 'icon': Icons.phone_android_rounded},
       {'name': 'UI/UX Design', 'icon': Icons.brush_rounded},
       {'name': 'Data Science', 'icon': Icons.bar_chart_rounded},
+      {'name': 'Cybersecurity', 'icon': Icons.security_rounded},
+      {'name': 'Cloud Computing', 'icon': Icons.cloud_queue_rounded},
     ],
     'Creative': [
       {'name': 'Photography', 'icon': Icons.camera_alt_rounded},
@@ -66,6 +86,8 @@ class _SkillSelectionScreenState extends State<SkillSelectionScreen> {
       {'name': 'Graphic Design', 'icon': Icons.palette_rounded},
       {'name': 'Music Production', 'icon': Icons.music_note_rounded},
       {'name': 'Animation', 'icon': Icons.animation_rounded},
+      {'name': 'Painting', 'icon': Icons.edit_rounded},
+      {'name': 'Fashion Design', 'icon': Icons.style_rounded},
     ],
     'Business': [
       {'name': 'Marketing', 'icon': Icons.trending_up_rounded},
@@ -73,15 +95,53 @@ class _SkillSelectionScreenState extends State<SkillSelectionScreen> {
       {'name': 'Management', 'icon': Icons.groups_rounded},
       {'name': 'Finance', 'icon': Icons.account_balance_wallet_rounded},
       {'name': 'Sales', 'icon': Icons.shopping_cart_rounded},
+      {'name': 'Entrepreneurship', 'icon': Icons.lightbulb_rounded},
     ],
     'Lifestyle': [
       {'name': 'Cooking', 'icon': Icons.restaurant_rounded},
       {'name': 'Fitness', 'icon': Icons.fitness_center_rounded},
       {'name': 'Yoga', 'icon': Icons.self_improvement_rounded},
-      {'name': 'Travel', 'icon': Icons.flight_takeoff_rounded},
+      {'name': 'Baking', 'icon': Icons.bakery_dining_rounded},
+      {'name': 'Cycling', 'icon': Icons.directions_bike_rounded},
       {'name': 'Gardening', 'icon': Icons.eco_rounded},
+      {'name': 'Nutrition', 'icon': Icons.apple_rounded},
+      {'name': 'Mental Health', 'icon': Icons.psychology_rounded},
+    ],
+    'Creative & Arts': [
+      {'name': 'Painting', 'icon': Icons.format_paint_rounded},
+      {'name': 'Sketching', 'icon': Icons.gesture_rounded},
+      {'name': 'Photography', 'icon': Icons.camera_alt_rounded},
+      {'name': 'Fashion Design', 'icon': Icons.style_rounded},
+      {'name': 'Interior Design', 'icon': Icons.home_rounded},
+      {'name': 'Animation', 'icon': Icons.animation_rounded},
+      {'name': 'Acting', 'icon': Icons.theater_comedy_rounded},
+    ],
+    'Professional': [
+      {'name': 'Public Speaking', 'icon': Icons.record_voice_over_rounded},
+      {'name': 'Negotiation', 'icon': Icons.handshake_rounded},
+      {'name': 'Leadership', 'icon': Icons.star_rounded},
+      {'name': 'Strategy', 'icon': Icons.insights_rounded},
+      {'name': 'Accounting', 'icon': Icons.calculate_rounded},
     ],
   };
+
+  final List<String> _suggestedRoles = [
+    'Software Engineer', 'Full Stack Developer', 'Flutter Developer', 'React Developer',
+    'Backend Developer', 'Frontend Developer', 'Mobile Developer',
+    'Product Designer', 'UI/UX Designer', 'Graphic Designer', 'Illustrator',
+    'Data Scientist', 'Data Analyst', 'Machine Learning Engineer',
+    'Marketing Manager', 'Content Creator', 'SEO Specialist', 'Social Media Manager',
+    'Project Manager', 'Product Manager', 'Scrum Master',
+    'Photographer', 'Videographer', 'Video Editor',
+    'Chef', 'Baker', 'Cook',
+    'Fitness Coach', 'Yoga Instructor', 'Personal Trainer',
+    'Sales Representative', 'Business Development Manager',
+    'Accountant', 'Financial Advisor',
+    'Student', 'Researcher', 'Professor',
+    'Entrepreneur', 'Founder', 'CEO',
+    'Customer Support', 'Virtual Assistant',
+  ];
+
 
   void _toggleSkill(String skill) {
     setState(() {
@@ -122,6 +182,11 @@ class _SkillSelectionScreenState extends State<SkillSelectionScreen> {
       return;
     }
 
+    if (_roleController.text.trim().isEmpty) {
+      setState(() => _roleError = 'Please tell us your role');
+      return;
+    }
+
     setState(() => _isSaving = true);
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -142,6 +207,7 @@ class _SkillSelectionScreenState extends State<SkillSelectionScreen> {
         }).toList();
 
         final Map<String, dynamic> updateData = {
+          'role': _roleController.text.trim(),
           'skills': _selectedSkills,
           'skills_with_levels': updatedSkillsWithLevels,
         };
@@ -199,6 +265,85 @@ class _SkillSelectionScreenState extends State<SkillSelectionScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
+                  // Role Section with Autocomplete
+                  Autocomplete<String>(
+                    optionsBuilder: (TextEditingValue textEditingValue) {
+                      if (textEditingValue.text.isEmpty) {
+                        return const Iterable<String>.empty();
+                      }
+                      return _suggestedRoles.where((role) {
+                        return role.toLowerCase().contains(textEditingValue.text.toLowerCase());
+                      });
+                    },
+                    onSelected: (String selection) {
+                      _roleController.text = selection;
+                      if (_roleError != null) setState(() => _roleError = null);
+                    },
+                    fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                      // Sync external controller with autocomplete controller
+                      if (_roleController.text != controller.text && _roleController.text.isNotEmpty && controller.text.isEmpty) {
+                        controller.text = _roleController.text;
+                      }
+                      
+                      return CleanTextField(
+                        label: 'WHAT IS YOUR ROLE?',
+                        hintText: 'e.g. Flutter Developer, Product Designer',
+                        controller: controller, // Use the autocomplete controller
+                        focusNode: focusNode,
+                        prefixIcon: Icons.work_outline,
+                        errorText: _roleError,
+                        onChanged: (val) {
+                          _roleController.text = val;
+                          if (_roleError != null) setState(() => _roleError = null);
+                        },
+                      );
+                    },
+                    optionsViewBuilder: (context, onSelected, options) {
+                      return Align(
+                        alignment: Alignment.topLeft,
+                        child: Material(
+                          elevation: 8,
+                          borderRadius: BorderRadius.circular(16),
+                          color: context.surfaceColor,
+                          child: Container(
+                            width: MediaQuery.of(context).size.width - 48,
+                            constraints: const BoxConstraints(maxHeight: 250),
+                            child: ListView.separated(
+                              padding: EdgeInsets.zero,
+                              shrinkWrap: true,
+                              itemCount: options.length,
+                              separatorBuilder: (context, index) => Divider(height: 1, color: context.border.withOpacity(0.5)),
+                              itemBuilder: (BuildContext context, int index) {
+                                final String option = options.elementAt(index);
+                                return ListTile(
+                                  onTap: () => onSelected(option),
+                                  title: Text(
+                                    option,
+                                    style: TextStyle(color: context.textHigh, fontSize: 14),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 24),
+                  
+                  // Skill Search Header
+                  Text(
+                    'SELECT YOUR SKILLS',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.2,
+                      color: context.textLow,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  
                   // Search and Add Bar
                   Container(
                     decoration: BoxDecoration(
@@ -335,21 +480,21 @@ class _SkillSelectionScreenState extends State<SkillSelectionScreen> {
                   onPressed: _isSaving ? null : _saveAndContinue,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: context.primary,
-                    foregroundColor: Colors.white,
+                    foregroundColor: context.onPrimary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
                     elevation: 0,
                   ),
                   child: _isSaving
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          child: CircularProgressIndicator(color: context.onPrimary, strokeWidth: 2),
                         )
-                      : const Text(
+                      : Text(
                           'Continue',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: context.onPrimary),
                         ),
                 ),
               ),
@@ -389,13 +534,13 @@ class _SkillSelectionScreenState extends State<SkillSelectionScreen> {
           Icon(
             icon,
             size: 18,
-            color: isSelected ? Colors.white : context.primary,
+            color: isSelected ? context.onPrimary : context.primary,
           ),
           const SizedBox(width: 8),
           Text(
             name,
             style: TextStyle(
-              color: isSelected ? Colors.white : context.textHigh,
+              color: isSelected ? context.onPrimary : context.textHigh,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
             ),
           ),
