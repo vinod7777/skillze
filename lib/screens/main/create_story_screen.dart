@@ -284,7 +284,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                 constraints: const BoxConstraints(maxHeight: 180),
                 decoration: BoxDecoration(
                   color: Colors.black.withOpacity(0.8),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: Colors.white10),
                 ),
                 child: ListView.builder(
@@ -438,7 +438,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
           backgroundColor: Colors.white,
           foregroundColor: Colors.black,
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           elevation: 0,
         ),
         child: Row(

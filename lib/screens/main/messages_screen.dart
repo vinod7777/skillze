@@ -83,7 +83,7 @@ class _MessagesScreenState extends State<MessagesScreen> with AutomaticKeepAlive
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
                           color: context.primary.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
                           Icons.add_rounded,
@@ -104,7 +104,7 @@ class _MessagesScreenState extends State<MessagesScreen> with AutomaticKeepAlive
                 height: 50,
                 decoration: BoxDecoration(
                   color: context.surfaceLightColor,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(10),
                   boxShadow: [],
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -195,6 +195,17 @@ class _MessagesScreenState extends State<MessagesScreen> with AutomaticKeepAlive
 
                         final chats = snapshot.data!.docs.where((doc) {
                           final data = doc.data() as Map<String, dynamic>;
+                          
+                          // Filter out if user has hidden/deleted this chat individually
+                          final deletedAtMap = data['deletedAt'] as Map<String, dynamic>?;
+                          final deletedAt = deletedAtMap?[currentUser.uid] as Timestamp?;
+                          if (deletedAt != null) {
+                            final lastMessageTime = data['lastMessageTime'] as Timestamp?;
+                            if (lastMessageTime != null && lastMessageTime.compareTo(deletedAt) <= 0) {
+                              return false;
+                            }
+                          }
+
                           if (_searchQuery.isEmpty) return true;
                           final otherName = _getOtherUserName(data, currentUser.uid).toLowerCase();
                           return otherName.contains(_searchQuery);
@@ -339,14 +350,19 @@ class _MessagesScreenState extends State<MessagesScreen> with AutomaticKeepAlive
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        otherUserName,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: hasUnread ? FontWeight.bold : FontWeight.w600,
-                          color: context.textHigh,
+                      Expanded(
+                        child: Text(
+                          otherUserName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: hasUnread ? FontWeight.bold : FontWeight.w600,
+                            color: context.textHigh,
+                          ),
                         ),
                       ),
+                      const SizedBox(width: 8),
                       Text(
                         timeStr,
                         style: TextStyle(
@@ -551,11 +567,14 @@ class _MessagesScreenState extends State<MessagesScreen> with AutomaticKeepAlive
 
 
   Future<bool> _confirmDeleteChats(List<String> chatIds) async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) return false;
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: context.surfaceColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         title: Text(
           chatIds.length == 1 ? 'Delete Chat?' : 'Delete ${chatIds.length} Chats?',
           style: TextStyle(color: context.textHigh, fontWeight: FontWeight.bold),
@@ -579,7 +598,11 @@ class _MessagesScreenState extends State<MessagesScreen> with AutomaticKeepAlive
 
     if (confirmed == true) {
       for (final id in chatIds) {
-        await FirebaseFirestore.instance.collection('chats').doc(id).delete();
+        // Individual delete: set 'deletedAt' timestamp for this user
+        await FirebaseFirestore.instance.collection('chats').doc(id).update({
+          'deletedAt.${currentUser.uid}': FieldValue.serverTimestamp(),
+          'unreadCount_${currentUser.uid}': 0, // Also mark everything as read
+        });
       }
       setState(() {
         _selectedChatIds.removeAll(chatIds);
@@ -774,7 +797,7 @@ class _NewChatModalState extends State<NewChatModal> {
       height: MediaQuery.of(context).size.height * 0.85,
       decoration: BoxDecoration(
         color: context.surfaceColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
       ),
       child: Column(
         children: [
@@ -798,7 +821,7 @@ class _NewChatModalState extends State<NewChatModal> {
               height: 50,
               decoration: BoxDecoration(
                 color: context.surfaceLightColor,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(10),
                 boxShadow: [],
               ),
               padding: const EdgeInsets.symmetric(horizontal: 16),

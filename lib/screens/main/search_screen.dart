@@ -616,7 +616,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                               decoration: BoxDecoration(
                                 color: context.primary.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                               child: Icon(
                                 showMap ? Icons.view_list_rounded : Icons.map_rounded,
@@ -676,7 +676,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                     gradient: LinearGradient(
                       colors: [context.surfaceColor, context.surfaceColor.withOpacity(0.95)],
                     ),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: context.primary.withOpacity(0.2)),
                     boxShadow: [
                       BoxShadow(
@@ -1055,7 +1055,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                         color: isMatched
                             ? context.primary.withOpacity(0.2)
                             : context.surfaceColor,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         skill,
@@ -1085,7 +1085,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                         foregroundColor: context.onPrimary,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                       ),
                       icon: const Icon(Icons.directions_rounded, size: 18),
@@ -1110,7 +1110,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                       ),
                       icon: const Icon(Icons.person_outline_rounded, size: 18),
@@ -1262,7 +1262,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         side: BorderSide(color: context.border, width: 1),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                       ),
                       child: Text(
@@ -1407,7 +1407,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
     showModalBottomSheet(
       context: context,
       backgroundColor: context.surfaceLightColor,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(10))),
       builder: (context) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -1628,7 +1628,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                             decoration: BoxDecoration(
                               color: isSelected ? context.primary.withOpacity(0.1) : context.surfaceLightColor,
-                              borderRadius: BorderRadius.circular(20),
+                              borderRadius: BorderRadius.circular(8),
                               border: isSelected ? Border.all(color: context.primary.withOpacity(0.3)) : null,
                             ),
                             child: Row(
@@ -1675,7 +1675,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                       style: ElevatedButton.styleFrom(
                         backgroundColor: context.primary,
                         foregroundColor: context.onPrimary,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         elevation: 0,
                       ),
                       child: Text(

@@ -170,7 +170,7 @@ class _SkillsScreenState extends State<SkillsScreen> {
                   Container(
                     decoration: BoxDecoration(
                       color: context.surfaceColor,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: context.border, width: 1.5),
                       boxShadow: [
                         BoxShadow(
@@ -215,7 +215,7 @@ class _SkillsScreenState extends State<SkillsScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       decoration: BoxDecoration(
                         color: context.surfaceColor,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: context.border, width: 1.2),
                       ),
                       child: Row(
@@ -316,7 +316,7 @@ class _SkillsScreenState extends State<SkillsScreen> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: context.surfaceColor,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(color: context.border, width: 1),
       ),
       child: Column(
@@ -450,11 +450,11 @@ class _SkillsScreenState extends State<SkillsScreen> {
                   hintText: 'e.g. Fullstack Developer, Product Designer',
                   hintStyle: TextStyle(color: context.textMed.withOpacity(0.4)),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(10),
                     borderSide: BorderSide.none,
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(10),
                     borderSide: BorderSide(color: context.primary, width: 2),
                   ),
                   contentPadding: const EdgeInsets.all(20),
@@ -471,7 +471,7 @@ class _SkillsScreenState extends State<SkillsScreen> {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: context.primary,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     elevation: 0,
                   ),
                   child: const Text('Update Status', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),

@@ -105,7 +105,7 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
                   height: 48,
                   decoration: BoxDecoration(
                     color: context.surfaceColor,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: context.border),
                   ),
                   child: Icon(
@@ -170,7 +170,7 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
                     backgroundColor: context.primary,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     elevation: 0,
                   ),
@@ -222,7 +222,7 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
         Container(
           decoration: BoxDecoration(
             color: context.surfaceColor,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(10),
             border: Border.all(color: context.border),
           ),
           child: TextField(

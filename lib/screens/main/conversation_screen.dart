@@ -103,7 +103,7 @@ class _ConversationScreenState extends State<ConversationScreen>
       builder: (context) => Container(
         decoration: BoxDecoration(
           color: context.surfaceColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -160,13 +160,13 @@ class _ConversationScreenState extends State<ConversationScreen>
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: context.surfaceColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         title: Text('Send Photo?', style: TextStyle(color: context.textHigh)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
               child: GestureDetector(
                 onTap: () {
                   ImageViewerDialog.show(
@@ -206,7 +206,7 @@ class _ConversationScreenState extends State<ConversationScreen>
             style: ElevatedButton.styleFrom(
               backgroundColor: context.primary,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(8),
               ),
             ),
             child: const Text(
@@ -236,16 +236,26 @@ class _ConversationScreenState extends State<ConversationScreen>
       final imageUrl = jsonResp['data']?['url'];
       if (imageUrl != null) {
         final user = FirebaseAuth.instance.currentUser;
-        await FirebaseFirestore.instance
-            .collection('chats')
-            .doc(widget.chatId)
-            .collection('messages')
-            .add({
-              'senderId': user?.uid,
-              'imageUrl': imageUrl,
-              'timestamp': FieldValue.serverTimestamp(),
-              'status': 'sent',
-            });
+        await Future.wait([
+          FirebaseFirestore.instance
+              .collection('chats')
+              .doc(widget.chatId)
+              .collection('messages')
+              .add({
+                'senderId': user?.uid,
+                'imageUrl': imageUrl,
+                'timestamp': FieldValue.serverTimestamp(),
+                'status': 'sent',
+              }),
+          FirebaseFirestore.instance
+              .collection('chats')
+              .doc(widget.chatId)
+              .update({
+                'lastMessage': '📸 sent a photo',
+                'lastMessageTime': FieldValue.serverTimestamp(),
+                'unreadCount_${widget.otherUserId}': FieldValue.increment(1),
+              }),
+        ]);
 
         // Always send notification regardless of cached token state
         final isMuted = _cachedOtherMutedUsers?.contains(user?.uid) ?? false;
@@ -575,17 +585,25 @@ class _ConversationScreenState extends State<ConversationScreen>
     }
   }
 
+  /// Marks messages from the other user as read.
   Future<void> _markAsRead() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
     try {
+      debugPrint('Skillze_Sync: Marking chat ${widget.chatId} as read for user ${user.uid}');
+      
+      // 1. Reset unread count for the current user in the chat metadata
       await FirebaseFirestore.instance
           .collection('chats')
           .doc(widget.chatId)
-          .update({'unreadCount_${user.uid}': 0});
+          .set({
+            'unreadCount_${user.uid}': 0,
+            'lastRead_${user.uid}': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
 
-      // Update message status to seen in a batch
+      // 2. Find and update individual message statuses to 'seen'
+      // We only query messages where the OTHER user is the sender and status is not 'seen'
       final snapshot = await FirebaseFirestore.instance
           .collection('chats')
           .doc(widget.chatId)
@@ -593,22 +611,31 @@ class _ConversationScreenState extends State<ConversationScreen>
           .where('senderId', isEqualTo: widget.otherUserId)
           .get();
 
-      final batch = FirebaseFirestore.instance.batch();
-      bool hasUpdates = false;
+      if (snapshot.docs.isEmpty) {
+        debugPrint('Skillze_Sync: No unread messages found from ${widget.otherUserId}');
+        return;
+      }
+
+      final WriteBatch batch = FirebaseFirestore.instance.batch();
+      int updatedCount = 0;
+
       for (var doc in snapshot.docs) {
         final data = doc.data();
-        if (data['status'] == null ||
-            data['status'] == 'sent' ||
-            data['status'] == 'delivered') {
+        final currentStatus = data['status'];
+        
+        // Update if status is not 'seen'
+        if (currentStatus != 'seen') {
           batch.update(doc.reference, {'status': 'seen'});
-          hasUpdates = true;
+          updatedCount++;
         }
       }
-      if (hasUpdates) {
+
+      if (updatedCount > 0) {
         await batch.commit();
+        debugPrint('Skillze_Sync: Updated $updatedCount messages to "seen"');
       }
     } catch (e) {
-      // Ignore
+      debugPrint('Skillze_Sync Error: Failed to mark messages as read: $e');
     }
   }
 
@@ -631,6 +658,9 @@ class _ConversationScreenState extends State<ConversationScreen>
     try {
       // ── Run message write + chat metadata update IN PARALLEL ──────────────
       await Future.wait([
+        FirebaseFirestore.instance
+            .collection('chats')
+            .get(), // Dummy read to bypass indexing if it was deleted entirely earlier but it's not needed here.
         FirebaseFirestore.instance
             .collection('chats')
             .doc(widget.chatId)
@@ -827,459 +857,475 @@ class _ConversationScreenState extends State<ConversationScreen>
         ],
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: StreamBuilder<QuerySnapshot>(
-                stream: _messagesStream,
-                builder: (context, snapshot) {
-                  if (snapshot.hasError) {
-                    return Center(
-                      child: Text(
-                        'Error: ${snapshot.error}',
-                        style: TextStyle(color: context.textHigh),
-                      ),
-                    );
-                  }
+        child: StreamBuilder<DocumentSnapshot>(
+          stream: FirebaseFirestore.instance.collection('chats').doc(widget.chatId).snapshots(),
+          builder: (context, chatMetaSnapshot) {
+            final chatData = chatMetaSnapshot.data?.data() as Map<String, dynamic>?;
+            final deletedAtMap = chatData?['deletedAt'] as Map<String, dynamic>?;
+            final userDeletedAt = deletedAtMap?[currentUserId] as Timestamp?;
 
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  final messages = snapshot.data?.docs ?? [];
-
-                  if (messages.isEmpty) {
-                    return Center(
-                      child: SingleChildScrollView(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.chat_bubble_outline,
-                              size: 64,
-                              color: context.textHigh.withOpacity(0.2),
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No messages yet',
-                              style: TextStyle(
-                                color: context.textHigh.withOpacity(0.5),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Start a conversation!',
-                              style: TextStyle(
-                                color: context.textHigh.withOpacity(0.3),
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }
-
-                  // Update search matches for navigation
-                  if (_searchQuery.isNotEmpty) {
-                    final List<int> matches = [];
-                    final query = _searchQuery.toLowerCase();
-                    for (int i = 0; i < messages.length; i++) {
-                      final data = messages[i].data() as Map<String, dynamic>;
-                      final text = (data['text'] ?? '')
-                          .toString()
-                          .toLowerCase();
-                      if (text.contains(query)) {
-                        matches.add(i);
-                      }
-                    }
-                    _searchMatchIndices = matches;
-                  } else {
-                    _searchMatchIndices = [];
-                  }
-
-                  return ListView.builder(
-                    controller: _scrollController,
-                    reverse: true,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 20,
-                    ),
-                    itemCount: messages.length,
-                    itemBuilder: (context, index) {
-                      final doc = messages[index];
-                      final data = doc.data() as Map<String, dynamic>;
-                      final isMe = data['senderId'] == currentUserId;
-                      final timestamp = data['timestamp'] as Timestamp?;
-                      final date = timestamp?.toDate() ?? DateTime.now();
-
-                      // Date grouping logic
-                      bool showDateHeader = false;
-                      if (index == messages.length - 1) {
-                        showDateHeader = true;
-                      } else {
-                        final nextDoc = messages[index + 1];
-                        final nextTimestamp =
-                            nextDoc['timestamp'] as Timestamp?;
-                        if (nextTimestamp != null) {
-                          if (!_isSameDay(date, nextTimestamp.toDate())) {
-                            showDateHeader = true;
-                          }
-                        }
-                      }
-
-                      bool showTimestamp = true;
-                      bool showAvatar = true;
-
-                      // Check if the message vertically below it (which is index - 1 since we are reversed)
-                      // is from the same sender and within a minute.
-                      if (index > 0) {
-                        final newerDoc =
-                            messages[index - 1].data() as Map<String, dynamic>;
-                        final newerTimestamp =
-                            newerDoc['timestamp'] as Timestamp?;
-                        if (newerTimestamp != null &&
-                            data['senderId'] == newerDoc['senderId']) {
-                          final newerDate = newerTimestamp.toDate();
-                          final diff = date.difference(newerDate).abs();
-                          if (diff.inMinutes < 1) {
-                            showTimestamp = false;
-                            showAvatar = false;
-                          }
-                        }
-                      }
-
-                      if (!_messageKeys.containsKey(index)) {
-                        _messageKeys[index] = GlobalKey();
-                      }
-
-                      Widget item = _buildMessageBubble(
-                        doc,
-                        isMe,
-                        data,
-                        showTimestamp: showTimestamp,
-                        showAvatar: showAvatar,
-                      );
-
-                      if (showDateHeader) {
-                        item = Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [_buildDateHeader(date), item],
+            return Column(
+              children: [
+                Expanded(
+                  child: StreamBuilder<QuerySnapshot>(
+                    stream: _messagesStream,
+                    builder: (context, snapshot) {
+                      if (snapshot.hasError) {
+                        return Center(
+                          child: Text(
+                            'Error: ${snapshot.error}',
+                            style: TextStyle(color: context.textHigh),
+                          ),
                         );
                       }
 
-                      return Container(key: _messageKeys[index], child: item);
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+
+                      final rawMessages = snapshot.data?.docs ?? [];
+                      
+                      // Filter out messages deleted before 'deletedAt' for ONLY this user
+                      final messages = rawMessages.where((doc) {
+                        final data = doc.data() as Map<String, dynamic>;
+                        final msgTimestamp = data['timestamp'] as Timestamp?;
+                        if (userDeletedAt != null && msgTimestamp != null) {
+                          return msgTimestamp.compareTo(userDeletedAt) > 0;
+                        }
+                        return true;
+                      }).toList();
+
+                      if (messages.isEmpty) {
+                        return Center(
+                          child: SingleChildScrollView(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.chat_bubble_outline,
+                                  size: 64,
+                                  color: context.textHigh.withOpacity(0.2),
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No messages yet',
+                                  style: TextStyle(
+                                    color: context.textHigh.withOpacity(0.5),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Start a conversation!',
+                                  style: TextStyle(
+                                    color: context.textHigh.withOpacity(0.3),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+
+                      // Update search matches for navigation
+                      if (_searchQuery.isNotEmpty) {
+                        final List<int> matches = [];
+                        final query = _searchQuery.toLowerCase();
+                        for (int i = 0; i < messages.length; i++) {
+                          final data = messages[i].data() as Map<String, dynamic>;
+                          final text = (data['text'] ?? '')
+                              .toString()
+                              .toLowerCase();
+                          if (text.contains(query)) {
+                            matches.add(i);
+                          }
+                        }
+                        _searchMatchIndices = matches;
+                      } else {
+                        _searchMatchIndices = [];
+                      }
+
+                      return ListView.builder(
+                        controller: _scrollController,
+                        reverse: true,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 20,
+                        ),
+                        itemCount: messages.length,
+                        itemBuilder: (context, index) {
+                          final doc = messages[index];
+                          final data = doc.data() as Map<String, dynamic>;
+                          final isMe = data['senderId'] == currentUserId;
+                          final timestamp = data['timestamp'] as Timestamp?;
+                          final date = timestamp?.toDate() ?? DateTime.now();
+
+                          // Date grouping logic
+                          bool showDateHeader = false;
+                          if (index == messages.length - 1) {
+                            showDateHeader = true;
+                          } else {
+                            final nextDoc = messages[index + 1];
+                            final nextTimestamp =
+                                nextDoc['timestamp'] as Timestamp?;
+                            if (nextTimestamp != null) {
+                              if (!_isSameDay(date, nextTimestamp.toDate())) {
+                                showDateHeader = true;
+                              }
+                            }
+                          }
+
+                          bool showTimestamp = true;
+                          bool showAvatar = true;
+
+                          if (index > 0) {
+                            final newerDoc =
+                                messages[index - 1].data() as Map<String, dynamic>;
+                            final newerTimestamp =
+                                newerDoc['timestamp'] as Timestamp?;
+                            if (newerTimestamp != null &&
+                                data['senderId'] == newerDoc['senderId']) {
+                              final newerDate = newerTimestamp.toDate();
+                              final diff = date.difference(newerDate).abs();
+                              if (diff.inMinutes < 1) {
+                                showTimestamp = false;
+                                showAvatar = false;
+                              }
+                            }
+                          }
+
+                          if (!_messageKeys.containsKey(index)) {
+                            _messageKeys[index] = GlobalKey();
+                          }
+
+                          Widget item = _buildMessageBubble(
+                            doc,
+                            isMe,
+                            data,
+                            showTimestamp: showTimestamp,
+                            showAvatar: showAvatar,
+                          );
+
+                          if (showDateHeader) {
+                            item = Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [_buildDateHeader(date), item],
+                            );
+                          }
+
+                          return Container(key: _messageKeys[index], child: item);
+                        },
+                      );
                     },
-                  );
-                },
-              ),
-            ),
-
-            StreamBuilder<DocumentSnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('chats')
-                  .doc(widget.chatId)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.hasData && snapshot.data != null) {
-                  final chatData =
-                      snapshot.data!.data() as Map<String, dynamic>? ?? {};
-                  final isOtherTyping =
-                      chatData['typing_${widget.otherUserId}'] == true;
-                  if (isOtherTyping) {
-                    return Align(
-                      alignment: Alignment.centerLeft,
-                      child: Container(
-                        margin: const EdgeInsets.only(left: 16, bottom: 8, top: 4),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: context.isDark ? Colors.white12 : Colors.grey[200],
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: context.textHigh.withOpacity(0.2)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            SizedBox(
-                              width: 12,
-                              height: 12,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: context.textHigh,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'typing...',
-                              style: TextStyle(
-                                color: context.textHigh,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }
-                }
-                return const SizedBox.shrink();
-              },
-            ),
-
-
-            if (_iBlockedOther || _otherBlockedMe)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  vertical: 12,
-                  horizontal: 24,
-                ),
-                color: context.textHigh.withOpacity(0.05),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.info_outline_rounded,
-                      color: context.textHigh,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      _iBlockedOther
-                          ? 'You have blocked this user'
-                          : 'This user is unavailable',
-                      style: TextStyle(
-                        color: context.textHigh,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    if (_iBlockedOther) ...[
-                      const SizedBox(width: 8),
-                      TextButton(
-                        onPressed: _toggleBlockStatus,
-                        child: Text('Unblock', style: TextStyle(color: context.textHigh)),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-
-            if (_mentionSuggestions.isNotEmpty && _currentMentionQuery != null)
-              Container(
-                constraints: const BoxConstraints(maxHeight: 180),
-                decoration: BoxDecoration(
-                  color: context.surfaceLightColor,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(16),
                   ),
-                  border: Border(
-                    top: BorderSide(color: context.textHigh.withOpacity(0.2)),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 4,
-                      offset: const Offset(0, -2),
-                    ),
-                  ],
                 ),
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  padding: EdgeInsets.zero,
-                  itemCount: _mentionSuggestions.length,
-                  itemBuilder: (context, index) {
-                    final user = _mentionSuggestions[index];
-                    final username = user['username'] ?? '';
-                    final name = user['name'] ?? '';
 
-                    return ListTile(
-                      dense: true,
-                      leading: UserAvatar(
-                        imageUrl: AvatarHelper.getAvatarUrl(user),
-                        name: name,
-                        radius: 14,
-                      ),
-                      title: Text(
-                        username,
-                        style: TextStyle(
-                          color: context.textHigh,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
-                      ),
-                      subtitle: Text(
-                        name,
-                        style: TextStyle(color: context.textMed, fontSize: 12),
-                      ),
-                      onTap: () => _insertMention(username),
-                    );
+                StreamBuilder<DocumentSnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('chats')
+                      .doc(widget.chatId)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData && snapshot.data != null) {
+                      final chatData =
+                          snapshot.data!.data() as Map<String, dynamic>? ?? {};
+                      final isOtherTyping =
+                          chatData['typing_${widget.otherUserId}'] == true;
+                      if (isOtherTyping) {
+                        return Align(
+                          alignment: Alignment.centerLeft,
+                          child: Container(
+                            margin: const EdgeInsets.only(left: 16, bottom: 8, top: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: context.isDark ? Colors.white12 : Colors.grey[200],
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: context.textHigh.withOpacity(0.2)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SizedBox(
+                                  width: 12,
+                                  height: 12,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: context.textHigh,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'typing...',
+                                  style: TextStyle(
+                                    color: context.textHigh,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+                    }
+                    return const SizedBox.shrink();
                   },
                 ),
-              ),
 
-            // Message Input Area
-            Container(
-              decoration: BoxDecoration(
-                color: context.bg,
-                border: Border(
-                  top: BorderSide(
-                    color: context.textHigh.withOpacity(0.2),
-                    width: 0.5,
-                  ),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
-                    blurRadius: 10,
-                    offset: const Offset(0, -4),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SafeArea(
-                    top: false,
-                    bottom: !_showEmojiPicker,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-                      child: Row(
-                    children: [
-                      IconButton(
-                        onPressed: (_iBlockedOther || _otherBlockedMe)
-                            ? null
-                            : _sendImage,
-                        icon: Icon(
-                          Icons.add_circle_outline_rounded,
+                if (_iBlockedOther || _otherBlockedMe)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 24,
+                    ),
+                    color: context.textHigh.withOpacity(0.05),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.info_outline_rounded,
                           color: context.textHigh,
-                          size: 26,
+                          size: 20,
                         ),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Container(
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: context.surfaceLightColor,
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(color: context.textHigh.withOpacity(0.2)),
+                        const SizedBox(width: 8),
+                        Text(
+                          _iBlockedOther
+                              ? 'You have blocked this user'
+                              : 'This user is unavailable',
+                          style: TextStyle(
+                            color: context.textHigh,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
                           ),
-                          clipBehavior: Clip.antiAlias,
-                          child: TextField(
-                            controller: _messageController,
-                            focusNode: _messageFocus,
-                            enabled: !(_iBlockedOther || _otherBlockedMe),
-                            maxLines: 5,
-                            minLines: 1,
+                        ),
+                        if (_iBlockedOther) ...[
+                          const SizedBox(width: 8),
+                          TextButton(
+                            onPressed: _toggleBlockStatus,
+                            child: Text('Unblock', style: TextStyle(color: context.textHigh)),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                if (_mentionSuggestions.isNotEmpty && _currentMentionQuery != null)
+                  Container(
+                    constraints: const BoxConstraints(maxHeight: 180),
+                    decoration: BoxDecoration(
+                      color: context.surfaceLightColor,
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(10),
+                      ),
+                      border: Border(
+                        top: BorderSide(color: context.textHigh.withOpacity(0.2)),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 4,
+                          offset: const Offset(0, -2),
+                        ),
+                      ],
+                    ),
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      padding: EdgeInsets.zero,
+                      itemCount: _mentionSuggestions.length,
+                      itemBuilder: (context, index) {
+                        final user = _mentionSuggestions[index];
+                        final username = user['username'] ?? '';
+                        final name = user['name'] ?? '';
+
+                        return ListTile(
+                          dense: true,
+                          leading: UserAvatar(
+                            imageUrl: AvatarHelper.getAvatarUrl(user),
+                            name: name,
+                            radius: 14,
+                          ),
+                          title: Text(
+                            username,
                             style: TextStyle(
                               color: context.textHigh,
-                              fontSize: 15,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: (_iBlockedOther || _otherBlockedMe)
-                                  ? 'Communication blocked'
-                                  : 'Type a message...',
-                              hintStyle: TextStyle(
-                                color: context.textLow,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w400,
-                              ),
-                              prefixIcon: IconButton(
-                                iconSize: 22,
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(
-                                  minWidth: 40,
-                                  minHeight: 40,
-                                ),
-                                icon: Icon(
-                                  Icons.emoji_emotions_outlined,
-                                  color: context.textHigh,
-                                ),
-                                onPressed: () {
-                                  if (_showEmojiPicker) {
-                                    setState(() => _showEmojiPicker = false);
-                                    _messageFocus.requestFocus();
-                                  } else {
-                                    _messageFocus.unfocus();
-                                    setState(() => _showEmojiPicker = true);
-                                  }
-                                },
-                              ),
-                              prefixIconConstraints: const BoxConstraints(
-                                minWidth: 40,
-                                minHeight: 40,
-                              ),
-                              border: InputBorder.none,
-                              isDense: true,
-                              contentPadding: const EdgeInsets.symmetric(
-                                vertical: 10,
-                                horizontal: 4,
-                              ),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
                             ),
                           ),
-                        ),
+                          subtitle: Text(
+                            name,
+                            style: TextStyle(color: context.textHigh.withOpacity(0.5), fontSize: 12),
+                          ),
+                          onTap: () => _insertMention(username),
+                        );
+                      },
+                    ),
+                  ),
+
+                // Message Input Area
+                Container(
+                  decoration: BoxDecoration(
+                    color: context.bg,
+                    border: Border(
+                      top: BorderSide(
+                        color: context.textHigh.withOpacity(0.2),
+                        width: 0.5,
                       ),
-                      const SizedBox(width: 8),
-                      GestureDetector(
-                        onTap: (_iBlockedOther || _otherBlockedMe)
-                            ? null
-                            : _sendMessage,
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: context.isDark ? Colors.white : context.textHigh,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: context.textHigh.withOpacity(0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 3),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.03),
+                        blurRadius: 10,
+                        offset: const Offset(0, -4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SafeArea(
+                        top: false,
+                        bottom: !_showEmojiPicker,
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                          child: Row(
+                            children: [
+                              IconButton(
+                                onPressed: (_iBlockedOther || _otherBlockedMe)
+                                    ? null
+                                    : _sendImage,
+                                icon: Icon(
+                                  Icons.add_circle_outline_rounded,
+                                  color: context.textHigh,
+                                  size: 26,
+                                ),
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Container(
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    color: context.surfaceLightColor,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: context.textHigh.withOpacity(0.2)),
+                                  ),
+                                  clipBehavior: Clip.antiAlias,
+                                  child: TextField(
+                                    controller: _messageController,
+                                    focusNode: _messageFocus,
+                                    enabled: !(_iBlockedOther || _otherBlockedMe),
+                                    maxLines: 5,
+                                    minLines: 1,
+                                    style: TextStyle(
+                                      color: context.textHigh,
+                                      fontSize: 15,
+                                    ),
+                                    decoration: InputDecoration(
+                                      hintText: (_iBlockedOther || _otherBlockedMe)
+                                          ? 'Communication blocked'
+                                          : 'Type a message...',
+                                      hintStyle: TextStyle(
+                                        color: context.textLow,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                      prefixIcon: IconButton(
+                                        iconSize: 22,
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(
+                                          minWidth: 40,
+                                          minHeight: 40,
+                                        ),
+                                        icon: Icon(
+                                          Icons.emoji_emotions_outlined,
+                                          color: context.textHigh,
+                                        ),
+                                        onPressed: () {
+                                          if (_showEmojiPicker) {
+                                            setState(() => _showEmojiPicker = false);
+                                            _messageFocus.requestFocus();
+                                          } else {
+                                            _messageFocus.unfocus();
+                                            setState(() => _showEmojiPicker = true);
+                                          }
+                                        },
+                                      ),
+                                      prefixIconConstraints: const BoxConstraints(
+                                        minWidth: 40,
+                                        minHeight: 40,
+                                      ),
+                                      border: InputBorder.none,
+                                      isDense: true,
+                                      contentPadding: const EdgeInsets.symmetric(
+                                        vertical: 10,
+                                        horizontal: 4,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              GestureDetector(
+                                onTap: (_iBlockedOther || _otherBlockedMe)
+                                    ? null
+                                    : _sendMessage,
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  width: 44,
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    color: context.isDark ? Colors.white : context.textHigh,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: context.textHigh.withOpacity(0.3),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 3),
+                                      ),
+                                    ],
+                                  ),
+                                  child: _isSending
+                                      ? const Center(
+                                          child: SizedBox(
+                                            width: 18,
+                                            height: 18,
+                                            child: CircularProgressIndicator(
+                                              color: Colors.white,
+                                              strokeWidth: 2,
+                                            ),
+                                          ),
+                                        )
+                                      : const Icon(
+                                          Icons.send_rounded,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
+                                ),
                               ),
                             ],
                           ),
-                          child: _isSending
-                              ? const Center(
-                                  child: SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2,
-                                    ),
-                                  ),
-                                )
-                              : const Icon(
-                                  Icons.send_rounded,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
                         ),
                       ),
+                      if (_showEmojiPicker)
+                        SizedBox(
+                          height: 250,
+                          width: double.infinity,
+                          child: EmojiPicker(
+                            textEditingController: _messageController,
+                          ),
+                        ),
                     ],
                   ),
                 ),
-              ),
-              if (_showEmojiPicker)
-                SizedBox(
-                  height: 250,
-                  width: double.infinity,
-                  child: EmojiPicker(
-                    textEditingController: _messageController,
-                  ),
-                ),
-            ],
-          ),
+              ],
+            );
+          },
         ),
-      ],
-    ),
-  ),
-);
+      ),
+    );
   }
 
   Widget _buildSearchField() {
@@ -1288,7 +1334,7 @@ class _ConversationScreenState extends State<ConversationScreen>
       margin: const EdgeInsets.symmetric(vertical: 4),
       decoration: BoxDecoration(
         color: context.surfaceLightColor,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: _isSearchFocused
               ? context.primary.withValues(alpha: 0.3)
@@ -1422,7 +1468,7 @@ class _ConversationScreenState extends State<ConversationScreen>
             color: context.isDark
                 ? Colors.white.withOpacity(0.1)
                 : Colors.black.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
             _getDateHeaderText(date),
@@ -1524,8 +1570,8 @@ class _ConversationScreenState extends State<ConversationScreen>
                         ? context.primary
                         : (context.isDark ? context.surfaceLightColor : Colors.white),
                     borderRadius: BorderRadius.only(
-                      topLeft: const Radius.circular(20),
-                      topRight: const Radius.circular(20),
+                      topLeft: const Radius.circular(12),
+                      topRight: const Radius.circular(12),
                       bottomLeft: Radius.circular(isMe ? 20 : 0),
                       bottomRight: Radius.circular(isMe ? 0 : 20),
                     ),
@@ -1556,7 +1602,7 @@ class _ConversationScreenState extends State<ConversationScreen>
                               isCircular: false,
                             ),
                             child: ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(8),
                               child: ConstrainedBox(
                                 constraints: BoxConstraints(
                                   maxWidth: MediaQuery.of(context).size.width * 0.6,
@@ -1712,7 +1758,7 @@ class _ConversationScreenState extends State<ConversationScreen>
       builder: (context) => Container(
         decoration: BoxDecoration(
           color: context.surfaceColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,

@@ -475,7 +475,7 @@ class _HomeScreenState extends State<HomeScreen>
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: _selectedInterestSkills.isNotEmpty ? context.primary : context.surfaceLightColor,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: context.border.withOpacity(0.3)),
                     boxShadow: _selectedInterestSkills.isNotEmpty ? [
                       BoxShadow(
@@ -1134,7 +1134,7 @@ class _HomeScreenState extends State<HomeScreen>
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: context.isDark ? Colors.black : context.primary,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(8),
         border: context.isDark ? Border.all(color: Colors.white24, width: 1) : null,
         boxShadow: [
           BoxShadow(
@@ -1186,7 +1186,7 @@ class _HomeScreenState extends State<HomeScreen>
                 backgroundColor: context.isDark ? Colors.white : Colors.white,
                 foregroundColor: context.isDark ? Colors.black : context.primary,
                 elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               child: const Text('Select Interests', style: TextStyle(fontWeight: FontWeight.bold)),
             ),

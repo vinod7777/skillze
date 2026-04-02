@@ -303,7 +303,7 @@ class _SkillSelectionScreenState extends State<SkillSelectionScreen> {
                         alignment: Alignment.topLeft,
                         child: Material(
                           elevation: 8,
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(10),
                           color: context.surfaceColor,
                           child: Container(
                             width: MediaQuery.of(context).size.width - 48,
@@ -348,7 +348,7 @@ class _SkillSelectionScreenState extends State<SkillSelectionScreen> {
                   Container(
                     decoration: BoxDecoration(
                       color: context.surfaceColor,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: context.border, width: 1.5),
                       boxShadow: [
                         BoxShadow(
@@ -482,7 +482,7 @@ class _SkillSelectionScreenState extends State<SkillSelectionScreen> {
                     backgroundColor: context.primary,
                     foregroundColor: context.onPrimary,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     elevation: 0,
                   ),
@@ -514,7 +514,7 @@ class _SkillSelectionScreenState extends State<SkillSelectionScreen> {
       ),
       decoration: BoxDecoration(
         color: isSelected ? context.primary : context.surfaceColor,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: isSelected ? context.primary : context.border,
         ),

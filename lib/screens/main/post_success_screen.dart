@@ -90,7 +90,7 @@ class _PostSuccessScreenState extends State<PostSuccessScreen>
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: const Color(0xFFE4E4E7)),
                       ),
                       child: const Icon(
@@ -238,7 +238,7 @@ class _PostSuccessScreenState extends State<PostSuccessScreen>
                     backgroundColor: const Color(0xFF0F2F6A),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     elevation: 0,
                   ),

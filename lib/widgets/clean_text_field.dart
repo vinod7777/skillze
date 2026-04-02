@@ -79,7 +79,7 @@ class _CleanTextFieldState extends State<CleanTextField> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: context.surfaceLightColor,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(8),
         boxShadow: widget.errorText != null
             ? []
             : [

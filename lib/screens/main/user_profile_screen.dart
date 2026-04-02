@@ -285,7 +285,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
       context: context,
       backgroundColor: context.surfaceColor,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
       ),
       builder: (context) => Column(
         mainAxisSize: MainAxisSize.min,
@@ -499,7 +499,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                                     behavior: SnackBarBehavior.floating,
                                     margin: const EdgeInsets.all(16),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(8),
                                       side: BorderSide(color: Colors.grey.withOpacity(0.05)),
                                     ),
                                   ),
@@ -830,7 +830,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
         builder: (context, scrollController) => Container(
           decoration: BoxDecoration(
             color: context.surfaceColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
           ),
           child: Column(
             children: [
@@ -899,7 +899,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: context.surfaceLightColor,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(10),
             border: Border.all(color: context.border.withOpacity(0.5)),
           ),
           child: Row(

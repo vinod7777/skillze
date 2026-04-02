@@ -73,19 +73,19 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _startAnimations() async {
+    final startTime = DateTime.now();
     final prefsFuture = SharedPreferences.getInstance();
 
-    await Future.delayed(const Duration(milliseconds: 300));
+    // Start UI animations in sequence
+    await Future.delayed(const Duration(milliseconds: 200));
     _iconsController.forward();
-    await Future.delayed(const Duration(milliseconds: 400));
+    await Future.delayed(const Duration(milliseconds: 300));
     _logoController.forward();
-    await Future.delayed(const Duration(milliseconds: 600));
+    await Future.delayed(const Duration(milliseconds: 400));
     _textController.forward();
 
+    // Prepare data while animations are playing
     final prefs = await prefsFuture;
-    await Future.delayed(const Duration(seconds: 2));
-    if (!mounted) return;
-
     final onboardingDone = prefs.getBool('onboarding_completed') ?? false;
     final user = FirebaseAuth.instance.currentUser;
 
@@ -95,7 +95,6 @@ class _SplashScreenState extends State<SplashScreen>
       destination = const OnboardingScreen();
     } else if (user != null) {
       try {
-        // Quick check for profile setup
         final userDoc = await FirebaseFirestore.instance
             .collection('users')
             .doc(user.uid)
@@ -114,15 +113,20 @@ class _SplashScreenState extends State<SplashScreen>
             destination = const MainNavigation();
           }
         } else {
-          // No user doc, but authenticated? Maybe signup failed mid-way.
           destination = const SkillSelectionScreen();
         }
       } catch (e) {
-        // Fallback to MainNavigation and let it handle errors if needed
         destination = const MainNavigation();
       }
     } else {
       destination = const WelcomeScreen();
+    }
+
+    // Ensure total duration is exactly 2 seconds
+    final elapsed = DateTime.now().difference(startTime);
+    final targetDuration = const Duration(seconds: 2);
+    if (elapsed < targetDuration) {
+      await Future.delayed(targetDuration - elapsed);
     }
 
     if (!mounted) return;

@@ -198,7 +198,7 @@ class _InterestsBottomSheetState extends State<InterestsBottomSheet> {
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           color: context.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: context.primary.withOpacity(0.3)),
                         ),
                         child: Row(
@@ -367,7 +367,7 @@ class _InterestsBottomSheetState extends State<InterestsBottomSheet> {
                       backgroundColor: context.primary,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       elevation: 0,
                     ),

@@ -305,7 +305,7 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
       context: context,
       backgroundColor: context.surfaceLightColor,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
       ),
       builder: (context) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 16),
@@ -353,7 +353,7 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: context.surfaceColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         title: Text('Add your thoughts', style: TextStyle(color: context.textHigh, fontSize: 18, fontWeight: FontWeight.bold)),
         content: TextField(
           controller: quoteController,
@@ -375,7 +375,7 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
             style: ElevatedButton.styleFrom(
               backgroundColor: context.primary,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               padding: const EdgeInsets.symmetric(horizontal: 24),
             ),
             onPressed: () {
@@ -1203,7 +1203,7 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
                     margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
                     decoration: BoxDecoration(
                       color: context.surfaceColor,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(8),
                       boxShadow: [
                         BoxShadow(
                           color: context.textHigh.withOpacity(0.06),

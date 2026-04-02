@@ -620,7 +620,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                                             horizontal: 10, vertical: 4),
                                         decoration: BoxDecoration(
                                           color: Colors.black.withOpacity(0.6),
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(8),
                                         ),
                                         child: Text(
                                           'Swipe to see all ${_selectedImages.length}',
@@ -656,7 +656,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 constraints: const BoxConstraints(maxHeight: 180),
                 decoration: BoxDecoration(
                   color: context.surfaceLightColor,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: context.border.withOpacity(0.2)),
                   boxShadow: [
                     BoxShadow(color: Colors.black12, blurRadius: 4, offset: const Offset(0, 2))
@@ -721,7 +721,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     gradient: LinearGradient(
                       colors: [context.secondary, context.secondary.withOpacity(0.8)],
                     ),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(8),
                     boxShadow: [
                       BoxShadow(
                         color: context.secondary.withOpacity(0.2),
@@ -760,7 +760,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 constraints: const BoxConstraints(maxHeight: 200),
                 decoration: BoxDecoration(
                   color: context.surfaceColor,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: context.border),
                   boxShadow: [
                     BoxShadow(
@@ -847,7 +847,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                           ? LinearGradient(colors: [context.secondary, context.secondary.withOpacity(0.8)])
                           : null,
                       color: isSelected ? null : context.surfaceLightColor,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(8),
                       border: Border.all(
                         color: isSelected ? context.secondary : context.border,
                         width: 1.5,
@@ -878,7 +878,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 constraints: const BoxConstraints(maxHeight: 100),
                 decoration: BoxDecoration(
                   color: context.surfaceColor,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: context.border),
                 ),
                 child: ListTile(
@@ -906,7 +906,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     gradient: LinearGradient(
                       colors: [context.secondary, context.secondary.withOpacity(0.8)],
                     ),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(8),
                     boxShadow: [
                       BoxShadow(
                         color: context.secondary.withOpacity(0.2),
@@ -946,7 +946,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: context.surfaceColor,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: context.border.withOpacity(0.6)),
                 boxShadow: [
                   BoxShadow(
@@ -991,7 +991,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: context.surfaceColor,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: context.border.withOpacity(0.6)),
                 ),
                 child: Row(
@@ -1058,7 +1058,7 @@ class DashedBorderPainter extends CustomPainter {
     final ui.Path path = ui.Path();
     path.addRRect(RRect.fromRectAndRadius(
         Rect.fromLTWH(0, 0, size.width, size.height),
-        const Radius.circular(20),
+        const Radius.circular(12),
       ));
 
     final List<double> dashArray = [gap, gap];

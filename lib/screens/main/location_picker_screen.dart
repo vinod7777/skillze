@@ -238,7 +238,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                 if (_suggestions.isNotEmpty)
                   Material(
                     elevation: 12,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(10),
                     clipBehavior: Clip.antiAlias,
                     color: context.surfaceColor,
                     child: Container(
@@ -278,12 +278,12 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                 else if (_searchController.text.length > 2 && !_isLoading)
                   Material(
                     elevation: 4,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(8),
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: context.surfaceColor,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
                         children: [
@@ -307,7 +307,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: context.surfaceColor,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(8),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.1),

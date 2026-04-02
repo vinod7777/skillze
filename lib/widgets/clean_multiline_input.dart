@@ -77,7 +77,7 @@ class _CleanMultilineInputState extends State<CleanMultilineInput> {
       duration: const Duration(milliseconds: 200),
       decoration: widget.showBorder ? BoxDecoration(
         color: context.surfaceLightColor,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.08),

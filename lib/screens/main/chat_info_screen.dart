@@ -309,7 +309,7 @@ class _ChatInfoScreenState extends State<ChatInfoScreen> with SingleTickerProvid
                   margin: const EdgeInsets.symmetric(horizontal: 24),
                   decoration: BoxDecoration(
                     color: context.surfaceLightColor.withOpacity(0.4),
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: context.border.withOpacity(0.1)),
                   ),
                   child: Column(
@@ -519,7 +519,7 @@ class _SharedMediaGrid extends StatelessWidget {
                 child: Container(
                   decoration: BoxDecoration(
                     color: context.surfaceLightColor,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: context.border.withOpacity(0.5)),
                   ),
                   child: ClipRRect(
@@ -666,11 +666,11 @@ class LinkPreviewCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: context.surfaceLightColor.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(color: context.border.withOpacity(0.5)),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(10),
         child: InkWell(
           onTap: () => _launchUrl(url),
           onLongPress: () => _showLinkOptions(context, url),
@@ -760,7 +760,7 @@ class LinkPreviewCard extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       backgroundColor: context.surfaceColor,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
       builder: (context) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [

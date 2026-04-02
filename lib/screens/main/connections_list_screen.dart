@@ -301,7 +301,7 @@ class _ConnectionsListScreenState extends State<ConnectionsListScreen> {
         height: 44,
         decoration: BoxDecoration(
           color: context.isDark ? const Color(0xFF262626) : const Color(0xFFEFEFEF),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
         ),
         child: TextField(
           controller: _searchController,
@@ -479,7 +479,7 @@ class _ConnectionsListScreenState extends State<ConnectionsListScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: context.surfaceLightColor,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(10))),
       builder: (context) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [

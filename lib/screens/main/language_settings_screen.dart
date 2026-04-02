@@ -36,7 +36,7 @@ class LanguageSettingsScreen extends StatelessWidget {
               decoration: InputDecoration(
                 hintText: context.t('search_languages'),
                 prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
               ),
             ),
           ),

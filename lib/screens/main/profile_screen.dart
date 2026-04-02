@@ -339,7 +339,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                   decoration: BoxDecoration(
                                     color: Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(8),
                                     boxShadow: [
                                       BoxShadow(
                                         color: Colors.black.withValues(alpha: 0.1),
@@ -741,7 +741,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
             return Container(
               decoration: BoxDecoration(
                 color: context.surfaceColor,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
               ),
               child: Column(
                 children: [
@@ -857,7 +857,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       style: ElevatedButton.styleFrom(
         backgroundColor: context.primary,
         padding: const EdgeInsets.symmetric(vertical: 18),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         elevation: 0,
       ),
       child: Text(
@@ -872,7 +872,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: context.surfaceColor,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: context.border),
       ),
       child: Row(
@@ -946,7 +946,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: context.surfaceLightColor,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
               ),
@@ -960,7 +960,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 height: 50,
                 decoration: BoxDecoration(
                   color: context.surfaceLightColor,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
                   children: ['Beginner', 'Intermediate', 'Expert'].map((level) {
@@ -972,7 +972,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                           margin: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
                             color: isSelected ? context.primary : Colors.transparent,
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           alignment: Alignment.center,
                           child: Text(
@@ -1000,7 +1000,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                       },
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         side: BorderSide(color: Colors.red.withOpacity(0.5)),
                       ),
                       child: const Text('Remove', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
@@ -1017,7 +1017,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                       style: ElevatedButton.styleFrom(
                         backgroundColor: context.primary,
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                       child: Text('Update Level', style: TextStyle(color: context.onPrimary, fontWeight: FontWeight.bold)),
                     ),

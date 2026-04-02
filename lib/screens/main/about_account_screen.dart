@@ -106,7 +106,7 @@ class AboutAccountScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: context.surfaceLightColor,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: context.border),
                   ),
                   child: Text(

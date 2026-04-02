@@ -204,7 +204,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
     final result = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: context.surfaceColor,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
       builder: (context) {
         return SafeArea(
           child: Column(
@@ -333,7 +333,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: context.primary,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                   child: isLoading 
                     ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: context.onPrimary, strokeWidth: 2))
@@ -356,9 +356,9 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(color: context.textMed),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: context.border)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: context.border)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: context.primary, width: 2)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: context.border)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: context.border)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: context.primary, width: 2)),
         filled: true,
         fillColor: context.surfaceLightColor,
       ),

@@ -55,7 +55,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: context.surfaceColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         title: Text(
           'Log Out',
           style: TextStyle(
@@ -78,7 +78,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               backgroundColor: context.primary,
               foregroundColor: context.onPrimary,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(8),
               ),
             ),
             child: const Text('Log Out'),
@@ -216,7 +216,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: context.surfaceColor,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(color: context.border),
           ),
           child: Row(
@@ -285,7 +285,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       backgroundColor: context.surfaceColor,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
       ),
       builder: (context) => Container(
         padding: const EdgeInsets.symmetric(vertical: 24),

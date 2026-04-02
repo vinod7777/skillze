@@ -68,7 +68,7 @@ class ImageViewerDialog extends StatelessWidget {
                   child: ClipRRect(
                     borderRadius: isCircular 
                         ? BorderRadius.circular(1000) 
-                        : BorderRadius.circular(16),
+                        : BorderRadius.circular(10),
                     child: _buildImageWidget(context),
                   ),
                 ),

@@ -22,6 +22,12 @@ class AppTheme {
   static final Color borderOverlay = const Color(0xFFFFFFFF).withOpacity(0.15);
 
   // Gradients
+  // Radius Constants
+  static const double cardRadius = 12.0;
+  static const double buttonRadius = 10.0;
+  static const double inputRadius = 10.0;
+  static const double sheetRadius = 16.0;
+
   static const LinearGradient primaryGradient = LinearGradient(
     colors: [Colors.white, Color(0xFFAAAAAA)],
     begin: Alignment.topLeft,
@@ -88,7 +94,7 @@ class AppTheme {
           foregroundColor: Colors.black, // Black text on white buttons for dark theme
           elevation: 2,
           shadowColor: Colors.black.withOpacity(0.3),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(buttonRadius)),
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
           textStyle: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 16).copyWith(inherit: true),
         ),
@@ -97,7 +103,7 @@ class AppTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: textHighEmphasis,
           side: BorderSide(color: textMediumEmphasis.withOpacity(0.5), width: 1),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(buttonRadius)),
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
           textStyle: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 16).copyWith(inherit: true),
         ),
@@ -108,10 +114,10 @@ class AppTheme {
         hintStyle: GoogleFonts.inter(color: textMediumEmphasis, fontSize: 14).copyWith(inherit: true),
         labelStyle: GoogleFonts.inter(color: textMediumEmphasis).copyWith(inherit: true),
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: borderOverlay)),
-        errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.redAccent)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(inputRadius), borderSide: BorderSide.none),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(inputRadius), borderSide: BorderSide.none),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(inputRadius), borderSide: BorderSide(color: borderOverlay)),
+        errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(inputRadius), borderSide: const BorderSide(color: Colors.redAccent)),
         prefixIconColor: textMediumEmphasis,
         suffixIconColor: textMediumEmphasis,
       ),
@@ -119,7 +125,7 @@ class AppTheme {
         color: surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(cardRadius),
           side: BorderSide(color: borderOverlay, width: 1),
         ),
       ),
@@ -127,7 +133,7 @@ class AppTheme {
         backgroundColor: background,
         elevation: 20,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(sheetRadius)),
         ),
       ),
       dividerTheme: DividerThemeData(
@@ -149,7 +155,7 @@ class AppTheme {
         actionTextColor: const Color(0xFF0F2F6A),
         behavior: SnackBarBehavior.floating,
         elevation: 6,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
@@ -220,7 +226,7 @@ class AppTheme {
           foregroundColor: Colors.white,
           elevation: 2,
           shadowColor: primary.withOpacity(0.3),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(buttonRadius)),
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
           textStyle: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 16).copyWith(inherit: true),
         ),
@@ -229,7 +235,7 @@ class AppTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: lightTextHighEmphasis,
           side: const BorderSide(color: lightBorderOverlay, width: 1.5),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(buttonRadius)),
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
           textStyle: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 16).copyWith(inherit: true),
         ),
@@ -249,7 +255,7 @@ class AppTheme {
         elevation: 1,
         shadowColor: Colors.black.withOpacity(0.05),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(cardRadius),
           side: const BorderSide(color: lightBorderOverlay, width: 1),
         ),
       ),
@@ -257,7 +263,7 @@ class AppTheme {
         backgroundColor: lightSurface,
         elevation: 20,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(sheetRadius)),
         ),
       ),
       listTileTheme: ListTileThemeData(
@@ -272,7 +278,7 @@ class AppTheme {
         actionTextColor: const Color(0xFF0F2F6A),
         behavior: SnackBarBehavior.floating,
         elevation: 6,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
@@ -326,7 +332,7 @@ class GlassContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var bRadius = borderRadius ?? BorderRadius.circular(12);
+    var bRadius = borderRadius ?? BorderRadius.circular(8);
     return Container(
       margin: margin,
       decoration: BoxDecoration(

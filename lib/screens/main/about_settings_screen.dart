@@ -26,7 +26,7 @@ class AboutSettingsScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: context.primary,
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Image.asset('assets/logo.png', errorBuilder: (_, __, ___) => Icon(Icons.rocket_launch, color: context.onPrimary, size: 50)),
                 ),

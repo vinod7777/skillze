@@ -99,7 +99,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                   height: 48,
                   decoration: BoxDecoration(
                     color: context.surfaceColor,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: context.border),
                   ),
                   child: Icon(
@@ -138,7 +138,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                     child: Container(
                       decoration: BoxDecoration(
                         color: context.surfaceColor,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(10),
                         border: Border.all(
                           color: _focusNodes[index].hasFocus
                               ? context.primary
@@ -215,7 +215,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                     backgroundColor: context.primary,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     elevation: 0,
                   ),

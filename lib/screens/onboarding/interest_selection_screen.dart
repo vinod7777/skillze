@@ -182,7 +182,7 @@ class _InterestSelectionScreenState extends State<InterestSelectionScreen> {
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                               decoration: BoxDecoration(
                                 color: context.primary.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
                                   color: context.primary.withOpacity(0.5),
                                   width: 1.5,
@@ -244,7 +244,7 @@ class _InterestSelectionScreenState extends State<InterestSelectionScreen> {
                     backgroundColor: context.primary,
                     foregroundColor: context.onPrimary,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     elevation: 0,
                   ),
@@ -276,7 +276,7 @@ class _InterestSelectionScreenState extends State<InterestSelectionScreen> {
       ),
       decoration: BoxDecoration(
         color: isSelected ? context.primary : context.surfaceColor,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: isSelected ? context.primary : (isCustom ? context.primary.withOpacity(0.3) : context.border),
           width: 1.5,

@@ -218,7 +218,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   Container(
                     decoration: BoxDecoration(
                       color: context.surfaceColor,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: context.border),
                     ),
                     child: TextField(
@@ -250,7 +250,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         backgroundColor: context.primary,
                         foregroundColor: context.onPrimary,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         elevation: 0,
                       ),
@@ -500,7 +500,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
                     color: context.surfaceLightColor,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: Row(
                     children: [
@@ -529,7 +529,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           decoration: BoxDecoration(
                             color: context.surfaceColor,
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(8),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withValues(alpha: 0.05),
@@ -644,7 +644,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       alignment: Alignment.topLeft,
                       child: Material(
                         elevation: 10,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(10),
                         color: context.surfaceColor,
                         shadowColor: Colors.black.withValues(alpha: 0.1),
                         child: Container(
@@ -707,7 +707,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     decoration: BoxDecoration(
                       color: context.primary,
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(8),
                       boxShadow: [
                         BoxShadow(
                           color: context.primary.withValues(alpha: 0.2),
@@ -781,7 +781,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       ),
                       decoration: BoxDecoration(
                         color: context.surfaceColor,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: context.border),
                         boxShadow: [
                           BoxShadow(

@@ -142,7 +142,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
         margin: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: const Color(0xFF1C1C1E),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(8),
         ),
         child: SafeArea(
           child: Column(
@@ -214,7 +214,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1C1C1E),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         title: const Text(
           'Delete Story?',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -326,7 +326,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: context.surfaceColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
         ),
         child: Column(
           children: [
@@ -634,14 +634,14 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
                   duration: const Duration(milliseconds: 200),
                   opacity: _isPaused ? 0.0 : 1.0,
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(8),
                     child: BackdropFilter(
                       filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                         decoration: BoxDecoration(
                           color: Colors.black.withOpacity(0.4),
-                          borderRadius: BorderRadius.circular(24),
+                          borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
                         ),
                         child: Text(

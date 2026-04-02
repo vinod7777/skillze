@@ -556,7 +556,7 @@ class _CommentsModalState extends State<CommentsModal> {
       height: MediaQuery.of(context).size.height * 0.8,
       decoration: BoxDecoration(
         color: context.bg,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
       ),
       child: Column(
         children: [

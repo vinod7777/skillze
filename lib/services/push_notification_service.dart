@@ -203,18 +203,20 @@ class PushNotificationService {
     try {
       final data = jsonDecode(payload);
       final type = data['type'];
-      
-      if (type == 'chat' || type == 'message') {
-        navigatorKey.currentState?.push(
-          MaterialPageRoute(
-            builder: (_) => ConversationScreen(
-              chatId: data['chatId'],
-              otherUserId: data['senderId'] ?? data['otherUserId'],
-              otherUserName: data['senderName'] ?? data['otherUserName'] ?? 'User',
+        debugPrint('Skillze_Push: Handling type ${data['type']} for chat ${data['chatId']} from ${data['senderId']}');
+
+        if (data['chatId'] != null) {
+          navigatorKey.currentState?.push(
+            MaterialPageRoute(
+              builder: (_) => ConversationScreen(
+                chatId: data['chatId'].toString(),
+                otherUserId: (data['senderId'] ?? data['otherUserId']).toString(),
+                otherUserName: (data['senderName'] ?? data['otherUserName'] ?? 'User').toString(),
+              ),
             ),
-          ),
-        );
-      } else if (type == 'follow') {
+          );
+        }
+ else if (type == 'follow') {
         final userId = data['senderId'] as String?;
         if (userId != null) {
           navigatorKey.currentState?.push(

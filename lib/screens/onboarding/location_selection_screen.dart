@@ -112,7 +112,7 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                     backgroundColor: context.primary,
                     foregroundColor: context.onPrimary,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     elevation: 0,
                   ),

@@ -315,7 +315,7 @@ class _UserListScreenState extends State<UserListScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: context.surfaceLightColor,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(10))),
       builder: (context) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [

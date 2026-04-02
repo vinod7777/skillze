@@ -122,7 +122,7 @@ class _HiddenContentScreenState extends State<HiddenContentScreen> with SingleTi
                 return Card(
                   margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   color: context.surfaceLightColor,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   child: ListTile(
                     contentPadding: const EdgeInsets.all(12),
                     title: Text(
