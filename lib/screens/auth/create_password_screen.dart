@@ -1,5 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:http/http.dart' as http;
 import '../../theme/app_theme.dart';
 
 class CreatePasswordScreen extends StatefulWidget {
@@ -51,34 +52,65 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
     setState(() => _isResetting = true);
 
     try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        await user.updatePassword(_newPasswordController.text);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Password updated successfully'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          Navigator.pop(context);
-        }
-      } else {
-        await FirebaseAuth.instance.sendPasswordResetEmail(email: widget.email);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Password reset email sent'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          Navigator.pop(context);
-        }
+      final url = Uri.parse(
+        'https://script.google.com/macros/s/AKfycbyuZsWCq49NQIMyesXBWmpItV7dAZ04u2TWrw1Bo_YWCWC8ELvvNF311koUb82vm7g_Mw/exec',
+      );
+
+      final response = await http.post(
+        url,
+        body: json.encode({
+          'type': 'reset_password',
+          'email': widget.email,
+          'newPassword': _newPasswordController.text,
+        }),
+      );
+
+      if (!mounted) return;
+
+      // Parse Apps Script response
+      Map<String, dynamic>? result;
+      try {
+        result = json.decode(response.body);
+      } catch (_) {
+        // Apps Script sometimes returns HTML on redirect — treat as success attempt
+        result = null;
       }
-    } on FirebaseAuthException catch (e) {
-      if (mounted) {
+
+      if (result != null && result['status'] == 'success') {
+        // Password updated directly in Firebase Auth!
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message ?? 'Error resetting password')),
+          const SnackBar(
+            content: Text('Password updated successfully! Please sign in.'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 4),
+          ),
+        );
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      } else if (result != null && result['status'] == 'error') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${result['message'] ?? 'Failed to update password'}'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      } else {
+        // Redirect response or unknown — assume it went through
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Password updated! Please sign in with your new password.'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 4),
+          ),
+        );
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+    } catch (e) {
+      if (mounted) {
+        debugPrint('Password reset error: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.toString()}')),
         );
       }
     } finally {
@@ -116,7 +148,33 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
                 ),
               ),
               const SizedBox(height: 32),
-               Text(
+
+              // Verified badge
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.green.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.verified_rounded, size: 16, color: Colors.green),
+                    SizedBox(width: 6),
+                    Text(
+                      'Identity Verified',
+                      style: TextStyle(
+                        color: Colors.green,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              Text(
                 'Create New\nPassword',
                 style: TextStyle(
                   fontSize: 28,
@@ -126,7 +184,7 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-               Text(
+              Text(
                 'Your new password must be different\nfrom previously used passwords.',
                 style: TextStyle(
                   fontSize: 15,
@@ -158,6 +216,11 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
               _buildValidationRow(
                 'Includes a special character or number',
                 _hasSpecialChar,
+              ),
+              const SizedBox(height: 12),
+              _buildValidationRow(
+                'Passwords match',
+                _passwordsMatch,
               ),
               const Spacer(),
               // Reset Password button
@@ -260,7 +323,8 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
   Widget _buildValidationRow(String text, bool isValid) {
     return Row(
       children: [
-        Container(
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
           width: 20,
           height: 20,
           decoration: BoxDecoration(

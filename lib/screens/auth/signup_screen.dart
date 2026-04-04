@@ -146,7 +146,7 @@ class _SignupScreenState extends State<SignupScreen> {
     try {
       _generatedOTP = (100000 + Random().nextInt(900000)).toString();
       final url = Uri.parse(
-        'https://script.google.com/macros/s/AKfycbyamZ6LtDof6wmKivaIoR7PLqMf4XG8cw7edxnA0wl0w-3Tzsd_WrFFUTqCK59_mSas0Q/exec',
+        'https://script.google.com/macros/s/AKfycbyuZsWCq49NQIMyesXBWmpItV7dAZ04u2TWrw1Bo_YWCWC8ELvvNF311koUb82vm7g_Mw/exec',
       );
 
       await http.post(
