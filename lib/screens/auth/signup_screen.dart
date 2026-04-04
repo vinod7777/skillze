@@ -144,12 +144,13 @@ class _SignupScreenState extends State<SignupScreen> {
     setState(() => _isLoading = true);
 
     try {
+      // Generate OTP securely on client, send to server for emailing
       _generatedOTP = (100000 + Random().nextInt(900000)).toString();
       final url = Uri.parse(
         'https://script.google.com/macros/s/AKfycbyuZsWCq49NQIMyesXBWmpItV7dAZ04u2TWrw1Bo_YWCWC8ELvvNF311koUb82vm7g_Mw/exec',
       );
 
-      await http.post(
+      final response = await http.post(
         url,
         body: json.encode({
           'email': _emailController.text.trim(),
@@ -161,16 +162,25 @@ class _SignupScreenState extends State<SignupScreen> {
       if (!mounted) return;
       setState(() => _isLoading = false);
 
-      _showOTPDialog();
+      // Only show OTP dialog if email was sent successfully
+      if (response.statusCode == 200 || response.statusCode == 302) {
+        _showOTPDialog();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to send OTP. Please check your email and try again.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      _showOTPDialog();
+      // Block signup if OTP email failed — do NOT show OTP dialog
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Note: OTP email sending failed, but continuing for dev: ${e.toString()}',
-          ),
+        const SnackBar(
+          content: Text('Could not send OTP email. Please check your internet connection.'),
+          backgroundColor: Colors.redAccent,
         ),
       );
     }
@@ -485,6 +495,7 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       backgroundColor: context.bg,
       body: SafeArea(
         child: SingleChildScrollView(

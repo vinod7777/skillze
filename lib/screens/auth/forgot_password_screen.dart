@@ -101,12 +101,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (sheetContext, setModalState) {
-            return Padding(
+            final bottomInset = MediaQuery.of(sheetContext).viewInsets.bottom;
+            return SingleChildScrollView(
               padding: EdgeInsets.only(
                 left: 24,
                 right: 24,
                 top: 32,
-                bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 32,
+                bottom: bottomInset + 32,
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -379,163 +380,174 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       backgroundColor: context.bg,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 24),
-
-              // Back button
-              GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: context.surfaceColor,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: context.border),
-                  ),
-                  child: Center(
-                    child: Icon(
-                      Icons.chevron_left,
-                      size: 20,
-                      color: context.textHigh,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 40),
-
-              // Heading
-              Text(
-                'Forgot\npassword?',
-                style: TextStyle(
-                  fontSize: 30,
-                  fontWeight: FontWeight.bold,
-                  color: context.textHigh,
-                  height: 1.2,
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Description
-              Text(
-                "Enter your email and we'll send you a verification code to reset your password.",
-                style: TextStyle(
-                  fontSize: 15,
-                  color: context.textMed,
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 40),
-
-              // Email label
-              Padding(
-                padding: const EdgeInsets.only(left: 4, bottom: 8),
-                child: Text(
-                  'EMAIL',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: context.textLow,
-                    letterSpacing: 1,
-                  ),
-                ),
-              ),
-
-              // Email field
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-                decoration: BoxDecoration(
-                  color: context.surfaceColor,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: context.border),
-                ),
-                child: Row(
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.email_outlined,
-                      size: 18,
-                      color: context.textLow,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: context.textHigh,
+                    const SizedBox(height: 24),
+        
+                    // Back button
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: context.surfaceColor,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: context.border),
                         ),
-                        decoration: InputDecoration(
-                          hintText: 'your@email.com',
-                          hintStyle: TextStyle(color: context.textLow),
-                          isDense: true,
-                          contentPadding: EdgeInsets.zero,
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          filled: false,
+                        child: Center(
+                          child: Icon(
+                            Icons.chevron_left,
+                            size: 20,
+                            color: context.textHigh,
+                          ),
                         ),
                       ),
                     ),
+                    const SizedBox(height: 40),
+        
+                    // Heading
+                    Text(
+                      'Forgot\npassword?',
+                      style: TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                        color: context.textHigh,
+                        height: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+        
+                    // Description
+                    Text(
+                      "Enter your email and we'll send you a verification code to reset your password.",
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: context.textMed,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+        
+                    // Email label
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4, bottom: 8),
+                      child: Text(
+                        'EMAIL',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: context.textLow,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ),
+        
+                    // Email field
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                      decoration: BoxDecoration(
+                        color: context.surfaceColor,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: context.border),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.email_outlined,
+                            size: 18,
+                            color: context.textLow,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextField(
+                              controller: _emailController,
+                              keyboardType: TextInputType.emailAddress,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: context.textHigh,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: 'your@email.com',
+                                hintStyle: TextStyle(color: context.textLow),
+                                isDense: true,
+                                contentPadding: EdgeInsets.zero,
+                                border: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                focusedBorder: InputBorder.none,
+                                filled: false,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 32),
                   ],
                 ),
               ),
+            ),
 
-              const Spacer(),
-
-              // Send Code button
-              Padding(
-                padding: const EdgeInsets.only(bottom: 48),
-                child: GestureDetector(
-                  onTap: _isLoading ? null : _sendOTP,
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    decoration: BoxDecoration(
-                      color: context.primary,
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: [
-                        BoxShadow(
-                          color: context.primary.withValues(alpha: 0.2),
-                          blurRadius: 15,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: Center(
-                      child: _isLoading
-                          ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : const Text(
-                              'Send Code',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 18,
-                                color: Colors.white,
-                              ),
+            // Send Code button — always above keyboard
+            Padding(
+              padding: EdgeInsets.only(
+                left: 24,
+                right: 24,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 32,
+                top: 16,
+              ),
+              child: GestureDetector(
+                onTap: _isLoading ? null : _sendOTP,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  decoration: BoxDecoration(
+                    color: context.primary,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: context.primary.withValues(alpha: 0.2),
+                        blurRadius: 15,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
                             ),
-                    ),
+                          )
+                        : const Text(
+                            'Send Code',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 18,
+                              color: Colors.white,
+                            ),
+                          ),
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

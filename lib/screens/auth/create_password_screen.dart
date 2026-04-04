@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../services/push_notification_service.dart';
 import '../../theme/app_theme.dart';
 
 class CreatePasswordScreen extends StatefulWidget {
@@ -60,8 +62,8 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
         url,
         body: json.encode({
           'type': 'reset_password',
-          'email': widget.email,
-          'newPassword': _newPasswordController.text,
+          'email': widget.email.trim(),
+          'newPassword': _newPasswordController.text.trim(),
         }),
       );
 
@@ -76,35 +78,84 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
         result = null;
       }
 
-      if (result != null && result['status'] == 'success') {
-        // Password updated directly in Firebase Auth!
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Password updated successfully! Please sign in.'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-            duration: Duration(seconds: 4),
-          ),
-        );
-        Navigator.of(context).popUntil((route) => route.isFirst);
+      // Debug Log: Check what we actually got from the Apps Script
+      debugPrint('Apps Script Reset Response - Status: ${response.statusCode}');
+
+      // Handle 302 Redirect specifically to get the real result
+      if (response.statusCode == 302 || response.statusCode == 307) {
+        final location = response.headers['location'];
+        if (location != null) {
+          debugPrint('Following redirect to: $location');
+          final redirectResp = await http.get(Uri.parse(location));
+          try {
+            result = json.decode(redirectResp.body);
+            debugPrint('Redirect Result: $result');
+          } catch (e) {
+            debugPrint('Failed to parse redirect body: $e');
+          }
+        }
+      }
+
+      bool isSuccess = (result != null && result['status'] == 'success') || 
+                       (result == null && response.statusCode == 200);
+
+      if (isSuccess) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Password updated! Finalizing login...'),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+
+        // Step 2: Sign in with the new password
+        try {
+          // Increase delay to 1.5 seconds to ensure propagation
+          await Future.delayed(const Duration(milliseconds: 1500));
+          
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
+            email: widget.email,
+            password: _newPasswordController.text,
+          );
+          
+          await PushNotificationService.updateToken();
+
+          if (!mounted) return;
+          Navigator.pushNamedAndRemoveUntil(context, '/main', (route) => false);
+        } catch (authError) {
+          debugPrint('Sync Error: $authError');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Reset worked, but login timed out. Status: $authError'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+            // Don't pop, let them try manually from login
+            Navigator.of(context).popUntil((route) => route.isFirst);
+          }
+        }
       } else if (result != null && result['status'] == 'error') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${result['message'] ?? 'Failed to update password'}'),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: ${result['message'] ?? 'Server failed to update password'}'),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
       } else {
-        // Redirect response or unknown — assume it went through
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Password updated! Please sign in with your new password.'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-            duration: Duration(seconds: 4),
-          ),
-        );
-        Navigator.of(context).popUntil((route) => route.isFirst);
+        // Unknown error with details
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Something went wrong (Status: ${response.statusCode}). Please try again.'),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -123,140 +174,142 @@ class _CreatePasswordScreenState extends State<CreatePasswordScreen> {
     return Scaffold(
       backgroundColor: context.bg,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 16),
-              // Back button
-              GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: Container(
-                  width: 48,
-                  height: 48,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 16),
+                // Back button
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: context.surfaceColor,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: context.border),
+                    ),
+                    child: Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      size: 18,
+                      color: context.textHigh,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 32),
+    
+                // Verified badge
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: context.surfaceColor,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: context.border),
+                    color: Colors.green.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Icon(
-                    Icons.arrow_back_ios_new_rounded,
-                    size: 18,
-                    color: context.textHigh,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 32),
-
-              // Verified badge
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.verified_rounded, size: 16, color: Colors.green),
-                    SizedBox(width: 6),
-                    Text(
-                      'Identity Verified',
-                      style: TextStyle(
-                        color: Colors.green,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              Text(
-                'Create New\nPassword',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: context.textHigh,
-                  height: 1.2,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Your new password must be different\nfrom previously used passwords.',
-                style: TextStyle(
-                  fontSize: 15,
-                  color: context.textMed,
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 32),
-              // New Password field
-              _buildPasswordField(
-                label: 'NEW PASSWORD',
-                controller: _newPasswordController,
-                obscure: _obscureNew,
-                onToggle: () => setState(() => _obscureNew = !_obscureNew),
-              ),
-              const SizedBox(height: 16),
-              // Confirm Password field
-              _buildPasswordField(
-                label: 'CONFIRM PASSWORD',
-                controller: _confirmPasswordController,
-                obscure: _obscureConfirm,
-                onToggle: () =>
-                    setState(() => _obscureConfirm = !_obscureConfirm),
-              ),
-              const SizedBox(height: 24),
-              // Validation indicators
-              _buildValidationRow('At least 8 characters long', _hasMinLength),
-              const SizedBox(height: 12),
-              _buildValidationRow(
-                'Includes a special character or number',
-                _hasSpecialChar,
-              ),
-              const SizedBox(height: 12),
-              _buildValidationRow(
-                'Passwords match',
-                _passwordsMatch,
-              ),
-              const Spacer(),
-              // Reset Password button
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: _isResetting ? null : _resetPassword,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: context.primary,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: _isResetting
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Text(
-                          'Reset Password',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.verified_rounded, size: 16, color: Colors.green),
+                      SizedBox(width: 6),
+                      Text(
+                        'Identity Verified',
+                        style: TextStyle(
+                          color: Colors.green,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
                         ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 32),
-            ],
+                const SizedBox(height: 16),
+    
+                Text(
+                  'Create New\nPassword',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: context.textHigh,
+                    height: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Your new password must be different\nfrom previously used passwords.',
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: context.textMed,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                // New Password field
+                _buildPasswordField(
+                  label: 'NEW PASSWORD',
+                  controller: _newPasswordController,
+                  obscure: _obscureNew,
+                  onToggle: () => setState(() => _obscureNew = !_obscureNew),
+                ),
+                const SizedBox(height: 16),
+                // Confirm Password field
+                _buildPasswordField(
+                  label: 'CONFIRM PASSWORD',
+                  controller: _confirmPasswordController,
+                  obscure: _obscureConfirm,
+                  onToggle: () =>
+                      setState(() => _obscureConfirm = !_obscureConfirm),
+                ),
+                const SizedBox(height: 24),
+                // Validation indicators
+                _buildValidationRow('At least 8 characters long', _hasMinLength),
+                const SizedBox(height: 12),
+                _buildValidationRow(
+                  'Includes a special character or number',
+                  _hasSpecialChar,
+                ),
+                const SizedBox(height: 12),
+                _buildValidationRow(
+                  'Passwords match',
+                  _passwordsMatch,
+                ),
+                const SizedBox(height: 48),
+                // Reset Password button
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: _isResetting ? null : _resetPassword,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: context.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: _isResetting
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            'Reset Password',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                  ),
+                ),
+                const SizedBox(height: 32),
+              ],
+            ),
           ),
         ),
       ),
