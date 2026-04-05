@@ -160,17 +160,26 @@ class _InterestsBottomSheetState extends State<InterestsBottomSheet> {
                         ),
                       ],
                     ),
-                    if (_selectedSkills.isNotEmpty)
-                      TextButton(
-                        onPressed: () => setState(() => _selectedSkills.clear()),
-                        child: Text(
-                          'Reset',
-                          style: TextStyle(
-                            color: context.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
+                    TextButton(
+                      onPressed: () async {
+                        final user = FirebaseAuth.instance.currentUser;
+                        if (user != null) {
+                          await FirebaseFirestore.instance
+                              .collection('users')
+                              .doc(user.uid)
+                              .update({'interested_skills': []});
+                        }
+                        widget.onSave([]);
+                        if (mounted) Navigator.pop(context);
+                      },
+                      child: Text(
+                        'Show All Feed',
+                        style: TextStyle(
+                          color: context.primary,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
+                    ),
                   ],
                 ),
               ),

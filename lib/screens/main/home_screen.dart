@@ -495,6 +495,53 @@ class _HomeScreenState extends State<HomeScreen>
             ],
           ),
           
+          if (viewMode == 'all' && _selectedInterestSkills.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 12, bottom: 4),
+              child: GestureDetector(
+                onTap: () async {
+                  final user = FirebaseAuth.instance.currentUser;
+                  if (user != null) {
+                    await FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(user.uid)
+                        .update({'interested_skills': []});
+                  }
+                  setState(() {
+                    _selectedInterestSkills = [];
+                    _showInterestsPrompt = true;
+                  });
+                  _fetchPosts(isFirstLoad: true);
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: context.primary.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.clear_all_rounded, size: 14, color: context.primary),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Showing personalized feed · ',
+                        style: TextStyle(fontSize: 12, color: context.textMed),
+                      ),
+                      Text(
+                        'Show All Feed',
+                        style: TextStyle(
+                          fontSize: 12, 
+                          color: context.primary, 
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          
           const SizedBox(height: 4),
         ],
       ),
@@ -1526,7 +1573,14 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
                 const SizedBox(height: 4),
                 TextButton(
-                  onPressed: () {
+                  onPressed: () async {
+                    final user = FirebaseAuth.instance.currentUser;
+                    if (user != null) {
+                      await FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(user.uid)
+                          .update({'interested_skills': []});
+                    }
                     setState(() {
                       _selectedInterestSkills = [];
                       _showInterestsPrompt = true;
