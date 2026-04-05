@@ -67,6 +67,24 @@ export function listenToPosts(callback) {
   });
 }
 
+/**
+ * Real-time listener for comments on a specific post
+ */
+export function listenToComments(postId, callback) {
+  const commentsRef = collection(db, "posts", postId, "comments");
+  const q = query(commentsRef, orderBy("timestamp", "desc"));
+  
+  return onSnapshot(q, (snapshot) => {
+    const comments = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    callback(comments);
+  }, (error) => {
+    console.error(`Comments Load Error for ${postId}:`, error);
+  });
+}
+
 // --- STORY MANAGEMENT ---
 export function listenToStories(callback) {
   const storiesRef = collection(db, "stories");
@@ -124,6 +142,21 @@ export async function deleteContent(type, id) {
     return true;
   } catch (e) {
     console.error(`Deletion of ${type} failed:`, e);
+    throw e;
+  }
+}
+
+/**
+ * Delete a specific comment from a post
+ */
+export async function deleteComment(postId, commentId) {
+  const commentRef = doc(db, "posts", postId, "comments", commentId);
+  try {
+    await deleteDoc(commentRef);
+    // Note: We might want to decrement commentsCount on the post here if needed
+    return true;
+  } catch (e) {
+    console.error("Comment deletion failed:", e);
     throw e;
   }
 }
