@@ -9,6 +9,27 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Manrope:wght@800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <style>
+    /* Table & Card Hover/Click States */
+    #skillsTableBody tr { cursor: pointer; transition: background 0.2s; }
+    #popularSkillsGrid > div { cursor: pointer; transition: transform 0.2s, background 0.2s; }
+    #popularSkillsGrid > div:hover { transform: translateY(-3px); background: var(--surface-high) !important; }
+
+    /* Users Drawer */
+    .users-drawer { position: fixed; top: 0; right: -450px; width: 450px; height: 100vh; background: var(--surface); box-shadow: -10px 0 50px rgba(0,0,0,0.8); z-index: 2000; transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; border-left: 1px solid rgba(255,255,255,0.05); }
+    .users-drawer.open { right: 0; }
+    .drawer-header { padding: 30px; background: var(--surface-high); display: flex; justify-content: space-between; align-items: center; }
+    .drawer-close { cursor: pointer; font-size: 1.5rem; color: var(--on-surface-variant); transition: color 0.2s; }
+    .drawer-close:hover { color: var(--error); }
+    .users-list { flex: 1; overflow-y: auto; padding: 25px; display: flex; flex-direction: column; gap: 15px; }
+    
+    .user-card-mini { background: var(--surface-high); padding: 15px; border-radius: 12px; display: flex; align-items: center; gap: 15px; text-decoration: none; color: inherit; transition: background 0.2s; }
+    .user-card-mini:hover { background: var(--surface-bright); }
+    .user-avatar { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid var(--surface-bright); }
+    
+    .drawer-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 1000; display: none; }
+    .drawer-overlay.active { display: block; }
+  </style>
 </head>
 <body>
 
@@ -113,6 +134,20 @@
     </main>
   </div>
 
+  <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+  <aside class="users-drawer" id="usersDrawer">
+    <div class="drawer-header">
+      <div>
+        <h3 id="drawerTitle">Users</h3>
+        <p id="drawerSubtitle" style="font-size: 12px; color: var(--on-surface-variant);">Filtered by selection</p>
+      </div>
+      <i class="bi bi-x-lg drawer-close" onclick="closeDrawer()"></i>
+    </div>
+    <div class="users-list" id="usersList">
+       <!-- Users populated by JS -->
+    </div>
+  </aside>
+
   <script type="module">
     import { listenToUsers } from './assets/data-service.js';
 
@@ -126,10 +161,55 @@
     let filteredRoles = [];
     let allSkills = [];
     let filteredSkills = [];
+    let latestUsers = []; // Global reference
     
     let rolePage = 1;
     let skillPage = 1;
     const pageSize = 10;
+
+    window.closeDrawer = () => {
+        document.getElementById('usersDrawer').classList.remove('open');
+        document.getElementById('drawerOverlay').classList.remove('active');
+    };
+
+    window.showUsersBySkill = (skill) => {
+        setupDrawer(`Users with "${skill}"`, `Skill classification`);
+        const matchingUsers = latestUsers.filter(u => (u.skills || u.interested_skills || []).includes(skill));
+        renderDrawerUsers(matchingUsers);
+    };
+
+    window.showUsersByRole = (role) => {
+        setupDrawer(`Profession: ${role}`, `Role classification`);
+        const matchingUsers = latestUsers.filter(u => u.role === role);
+        renderDrawerUsers(matchingUsers);
+    };
+
+    function setupDrawer(title, subtitle) {
+        document.getElementById('drawerTitle').innerText = title;
+        document.getElementById('drawerSubtitle').innerText = subtitle;
+        document.getElementById('usersDrawer').classList.add('open');
+        document.getElementById('drawerOverlay').classList.add('active');
+        document.getElementById('usersList').innerHTML = '<div style="text-align: center; padding: 40px; color: var(--on-surface-variant);"><i class="bi bi-person-bounding-box"></i> Searching members...</div>';
+    }
+
+    function renderDrawerUsers(users) {
+        const list = document.getElementById('usersList');
+        if (users.length === 0) {
+            list.innerHTML = '<div style="text-align: center; padding: 50px; color: var(--on-surface-variant);">No users found for this taxonomy.</div>';
+            return;
+        }
+
+        list.innerHTML = users.map(u => `
+            <a href="users.html?search=${u.uid}" class="user-card-mini">
+                <img src="${u.profileImageUrl || `https://ui-avatars.com/api/?name=${u.name}&background=random`}" class="user-avatar" onerror="this.src='https://ui-avatars.com/api/?name=${u.name}'">
+                <div style="flex: 1; min-width: 0;">
+                    <div style="font-weight: 700; color: var(--on-surface); font-size: 14px;">${u.name || 'Anonymous'}</div>
+                    <div style="font-size: 12px; color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${u.role || 'Member'} • ${u.email || '@username'}</div>
+                </div>
+                <i class="bi bi-chevron-right" style="color: var(--on-surface-variant); font-size: 0.8rem;"></i>
+            </a>
+        `).join('');
+    }
 
     function renderRoles() {
       if (!skillsTable) return;
@@ -144,7 +224,7 @@
       }
 
       skillsTable.innerHTML = pageData.map(([role, count]) => `
-        <tr>
+        <tr onclick="showUsersByRole('${role}')">
           <td><div style="display: flex; align-items: center; gap: 10px;"><i class="bi bi-briefcase-fill" style="color: var(--primary);"></i> ${role}</div></td>
           <td style="font-weight: 700;">${count} User${count === 1 ? '' : 's'}</td>
           <td><span class="badge badge-success">Active</span></td>
@@ -170,10 +250,10 @@
       }
 
       skillsGrid.innerHTML = pageData.map(([skill, count]) => `
-        <div style="padding: 12px; background: var(--surface-bright); border-radius: 10px; display: flex; justify-content: space-between; align-items: center;">
+        <div onclick="showUsersBySkill('${skill.replace(/'/g, "\\'")}')" style="padding: 12px; background: var(--surface-bright); border-radius: 10px; display: flex; justify-content: space-between; align-items: center;">
            <div style="min-width: 0;">
               <div style="font-weight: 700; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${skill}</div>
-              <div style="font-size: 0.7rem; color: var(--on-surface-variant);">${count} request${count === 1 ? '' : 's'}</div>
+              <div style="font-size: 0.7rem; color: var(--on-surface-variant);">${count} user${count === 1 ? '' : 's'}</div>
            </div>
            <i class="bi bi-bookmark-star-fill" style="color: var(--primary); font-size: 0.8rem;"></i>
         </div>
@@ -203,6 +283,7 @@
     }
 
     listenToUsers((users) => {
+      latestUsers = users; // Update global store
       const skillCounts = {};
       const roleCounts = {};
 

@@ -366,8 +366,8 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
         if (data['latitude'] != null && data['longitude'] != null) {
           if (currentUser != null && doc.id == currentUser.uid) continue;
 
-          // Skip users with ghost mode enabled
-          if (data['ghostMode'] == true) continue;
+          // Skip users with ghost mode enabled - Ensure field name matches privacy settings
+          if (data['isGhostMode'] == true || data['ghostMode'] == true) continue;
 
           final userLat = (data['latitude'] as num).toDouble();
           final userLng = (data['longitude'] as num).toDouble();

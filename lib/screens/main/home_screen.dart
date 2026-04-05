@@ -250,6 +250,10 @@ class _HomeScreenState extends State<HomeScreen>
       for (var doc in snapshot.docs) {
         if (currentUser != null && doc.id == currentUser.uid) continue;
         final data = doc.data();
+        
+        // PRIVACY ENFORCEMENT: Filter out users in Ghost Mode
+        if (data['isGhostMode'] == true || data['ghostMode'] == true) continue;
+
         if (data['latitude'] != null && data['longitude'] != null) {
           final userLat = (data['latitude'] as num).toDouble();
           final userLng = (data['longitude'] as num).toDouble();
