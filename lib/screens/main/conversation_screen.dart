@@ -1190,23 +1190,30 @@ class _ConversationScreenState extends State<ConversationScreen>
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
                           child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              IconButton(
-                                onPressed: (_iBlockedOther || _otherBlockedMe)
-                                    ? null
-                                    : _sendImage,
-                                icon: Icon(
-                                  Icons.add_circle_outline_rounded,
-                                  color: context.textHigh,
-                                  size: 26,
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 4),
+                                child: IconButton(
+                                  onPressed: (_iBlockedOther || _otherBlockedMe)
+                                      ? null
+                                      : _sendImage,
+                                  icon: Icon(
+                                    Icons.add_circle_outline_rounded,
+                                    color: context.textHigh,
+                                    size: 26,
+                                  ),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
                                 ),
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
                               ),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Container(
-                                  height: 44,
+                                  constraints: const BoxConstraints(
+                                    minHeight: 44,
+                                    maxHeight: 220,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: context.surfaceLightColor,
                                     borderRadius: BorderRadius.circular(8),
@@ -1217,8 +1224,9 @@ class _ConversationScreenState extends State<ConversationScreen>
                                     controller: _messageController,
                                     focusNode: _messageFocus,
                                     enabled: !(_iBlockedOther || _otherBlockedMe),
-                                    maxLines: 5,
+                                    maxLines: 10,
                                     minLines: 1,
+                                    keyboardType: TextInputType.multiline,
                                     style: TextStyle(
                                       color: context.textHigh,
                                       fontSize: 15,
