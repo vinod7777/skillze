@@ -10,6 +10,7 @@ import 'search_screen.dart';
 import 'create_post_screen.dart';
 import 'messages_screen.dart';
 import 'profile_screen.dart';
+import '../../widgets/floating_call_overlay.dart';
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
@@ -146,46 +147,52 @@ class MainNavigationState extends State<MainNavigation> with WidgetsBindingObser
           setIndex(0);
         }
       },
-      child: Scaffold(
-        backgroundColor: context.bg,
-        body: PageView(
-          controller: _pageController ??= PageController(initialPage: _currentIndex),
-          onPageChanged: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-          physics: const BouncingScrollPhysics(),
-          children: _screens,
-        ),
-        bottomNavigationBar: Container(
-          decoration: BoxDecoration(
-            color: context.surfaceColor.withOpacity(0.95),
-            border: Border(top: BorderSide(color: context.border.withOpacity(0.08), width: 0.5)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.03),
-                blurRadius: 15,
-                offset: const Offset(0, -5),
-              ),
-            ],
-          ),
-          child: SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-              child: Row(
-                children: [
-                  _buildNavIcon(0, Icons.home_rounded, Icons.home_outlined, context.t('home')),
-                  _buildNavIcon(1, Icons.search_rounded, Icons.search_outlined, context.t('search')),
-                  _buildNavCenterIcon(),
-                  _buildNavIcon(2, Icons.chat_bubble_rounded, Icons.chat_bubble_outline_rounded, context.t('messages')),
-                  _buildNavIcon(3, Icons.person_rounded, Icons.person_outline_rounded, context.t('profile')),
+      child: Stack(
+        children: [
+          Scaffold(
+            backgroundColor: context.bg,
+            body: PageView(
+              controller: _pageController ??= PageController(initialPage: _currentIndex),
+              onPageChanged: (index) {
+                setState(() {
+                  _currentIndex = index;
+                });
+              },
+              physics: const BouncingScrollPhysics(),
+              children: _screens,
+            ),
+            bottomNavigationBar: Container(
+              decoration: BoxDecoration(
+                color: context.surfaceColor.withValues(alpha: 0.95),
+                border: Border(top: BorderSide(color: context.border.withValues(alpha: 0.08), width: 0.5)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 15,
+                    offset: const Offset(0, -5),
+                  ),
                 ],
+              ),
+              child: SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                  child: Row(
+                    children: [
+                      _buildNavIcon(0, Icons.home_rounded, Icons.home_outlined, context.t('home')),
+                      _buildNavIcon(1, Icons.search_rounded, Icons.search_outlined, context.t('search')),
+                      _buildNavCenterIcon(),
+                      _buildNavIcon(2, Icons.chat_bubble_rounded, Icons.chat_bubble_outline_rounded, context.t('messages')),
+                      _buildNavIcon(3, Icons.person_rounded, Icons.person_outline_rounded, context.t('profile')),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
-        ),
+          // Floating Call Overlay
+          const FloatingCallWidget(),
+        ],
       ),
     );
   }
@@ -203,7 +210,7 @@ class MainNavigationState extends State<MainNavigation> with WidgetsBindingObser
           children: [
             Icon(
               isSelected ? selectedIcon : unselectedIcon,
-              color: isSelected ? context.primary : context.textLow.withOpacity(0.7),
+              color: isSelected ? context.primary : context.textLow.withValues(alpha: 0.7),
               size: 26,
             ),
             const SizedBox(height: 4),
@@ -212,7 +219,7 @@ class MainNavigationState extends State<MainNavigation> with WidgetsBindingObser
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected ? context.primary : context.textLow.withOpacity(0.7),
+                color: isSelected ? context.primary : context.textLow.withValues(alpha: 0.7),
                 letterSpacing: 0.2,
               ),
             ),

@@ -500,7 +500,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(color: context.border.withOpacity(0.5), height: 1),
+          child: Container(color: context.border.withValues(alpha: 0.5), height: 1),
         ),
       ),
       body: SingleChildScrollView(
@@ -513,7 +513,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             GestureDetector(
               onTap: () => _pickImage(ImageSource.gallery),
               child: CustomPaint(
-                painter: DashedBorderPainter(color: context.textLow.withOpacity(0.3)),
+                painter: DashedBorderPainter(color: context.textLow.withValues(alpha: 0.3)),
                 child: Container(
                   width: double.infinity,
                   height: 180,
@@ -595,7 +595,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                                           child: Container(
                                             padding: const EdgeInsets.all(6),
                                             decoration: BoxDecoration(
-                                              color: Colors.black.withOpacity(0.5),
+                                              color: Colors.black.withValues(alpha: 0.5),
                                               shape: BoxShape.circle,
                                             ),
                                             child: const Icon(Icons.close_rounded,
@@ -619,7 +619,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 10, vertical: 4),
                                         decoration: BoxDecoration(
-                                          color: Colors.black.withOpacity(0.6),
+                                          color: Colors.black.withValues(alpha: 0.6),
                                           borderRadius: BorderRadius.circular(8),
                                         ),
                                         child: Text(
@@ -657,7 +657,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 decoration: BoxDecoration(
                   color: context.surfaceLightColor,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: context.border.withOpacity(0.2)),
+                  border: Border.all(color: context.border.withValues(alpha: 0.2)),
                   boxShadow: [
                     BoxShadow(color: Colors.black12, blurRadius: 4, offset: const Offset(0, 2))
                   ],
@@ -719,12 +719,12 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [context.secondary, context.secondary.withOpacity(0.8)],
+                      colors: [context.secondary, context.secondary.withValues(alpha: 0.8)],
                     ),
                     borderRadius: BorderRadius.circular(8),
                     boxShadow: [
                       BoxShadow(
-                        color: context.secondary.withOpacity(0.2),
+                        color: context.secondary.withValues(alpha: 0.2),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       )
@@ -743,7 +743,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                         child: Container(
                           padding: const EdgeInsets.all(2),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.close_rounded, size: 12, color: Colors.white),
@@ -764,7 +764,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   border: Border.all(color: context.border),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -844,7 +844,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
                       gradient: isSelected 
-                          ? LinearGradient(colors: [context.secondary, context.secondary.withOpacity(0.8)])
+                          ? LinearGradient(colors: [context.secondary, context.secondary.withValues(alpha: 0.8)])
                           : null,
                       color: isSelected ? null : context.surfaceLightColor,
                       borderRadius: BorderRadius.circular(8),
@@ -854,7 +854,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       ),
                       boxShadow: isSelected ? [
                         BoxShadow(
-                          color: context.secondary.withOpacity(0.2),
+                          color: context.secondary.withValues(alpha: 0.2),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         )
@@ -904,12 +904,12 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [context.secondary, context.secondary.withOpacity(0.8)],
+                      colors: [context.secondary, context.secondary.withValues(alpha: 0.8)],
                     ),
                     borderRadius: BorderRadius.circular(8),
                     boxShadow: [
                       BoxShadow(
-                        color: context.secondary.withOpacity(0.2),
+                        color: context.secondary.withValues(alpha: 0.2),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       )
@@ -928,7 +928,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                         child: Container(
                           padding: const EdgeInsets.all(2),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.close_rounded, size: 12, color: Colors.white),
@@ -947,10 +947,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               decoration: BoxDecoration(
                 color: context.surfaceColor,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: context.border.withOpacity(0.6)),
+                border: Border.all(color: context.border.withValues(alpha: 0.6)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.02),
+                    color: Colors.black.withValues(alpha: 0.02),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -992,7 +992,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 decoration: BoxDecoration(
                   color: context.surfaceColor,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: context.border.withOpacity(0.6)),
+                  border: Border.all(color: context.border.withValues(alpha: 0.6)),
                 ),
                 child: Row(
                   children: [

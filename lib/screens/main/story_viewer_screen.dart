@@ -153,7 +153,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.3),
+                  color: Colors.white.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -358,7 +358,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
                 ),
               ],
             ),
-            Divider(color: context.border.withOpacity(0.5)),
+            Divider(color: context.border.withValues(alpha: 0.5)),
             const SizedBox(height: 8),
             Expanded(
               child: FutureBuilder<List<Map<String, dynamic>>>(
@@ -512,7 +512,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
                                   const EdgeInsets.symmetric(horizontal: 2),
                               height: 3,
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.3),
+                                color: Colors.white.withValues(alpha: 0.3),
                                 borderRadius: BorderRadius.circular(2),
                               ),
                               child: FractionallySizedBox(
@@ -555,7 +555,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
                               name: story.userName,
                               radius: 20,
                               border: Border.all(
-                                color: Colors.white.withOpacity(0.5),
+                                color: Colors.white.withValues(alpha: 0.5),
                                 width: 1,
                               ),
                             ),
@@ -589,7 +589,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
                                   _getTimeAgo(story.timestamp),
                                   style: TextStyle(
                                     color:
-                                        Colors.white.withOpacity(0.7),
+                                        Colors.white.withValues(alpha: 0.7),
                                     fontSize: 11,
                                   ),
                                 ),
@@ -640,9 +640,9 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.4),
+                          color: Colors.black.withValues(alpha: 0.4),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
                         ),
                         child: Text(
                           story.caption,
@@ -673,11 +673,11 @@ class _StoryViewerScreenState extends State<StoryViewerScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.6),
+                        color: Colors.black.withValues(alpha: 0.6),
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(color: Colors.white24, width: 0.5),
                         boxShadow: [
-                            BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 4, offset: const Offset(0, 2))
+                            BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 4, offset: const Offset(0, 2))
                         ]
                       ),
                       child: Row(

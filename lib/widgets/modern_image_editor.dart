@@ -72,7 +72,7 @@ class _ModernImageEditorState extends State<ModernImageEditor> {
           Positioned.fill(
             child: BackdropFilter(
               filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-              child: Container(color: Colors.black.withOpacity(0.6)),
+              child: Container(color: Colors.black.withValues(alpha: 0.6)),
             ),
           ),
 
@@ -196,7 +196,7 @@ class _ModernImageEditorState extends State<ModernImageEditor> {
         width: 44,
         height: 44,
         decoration: BoxDecoration(
-          color: color ?? Colors.black.withOpacity(0.5),
+          color: color ?? Colors.black.withValues(alpha: 0.5),
           shape: BoxShape.circle,
         ),
         child: Icon(icon, color: Colors.white, size: 24),
@@ -254,7 +254,7 @@ class EditorOverlayPainter extends CustomPainter {
     );
 
     // Dim Background (the area outside the crop)
-    final backgroundPaint = Paint()..color = Colors.black.withOpacity(0.5);
+    final backgroundPaint = Paint()..color = Colors.black.withValues(alpha: 0.5);
     final fullRect = Path()..addRect(Offset.zero & size);
     final cropPath = isProfile 
         ? (Path()..addOval(rect)) 
@@ -267,7 +267,7 @@ class EditorOverlayPainter extends CustomPainter {
 
     // Crop Border
     final borderPaint = Paint()
-      ..color = Colors.white.withOpacity(0.5)
+      ..color = Colors.white.withValues(alpha: 0.5)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0;
     
@@ -279,7 +279,7 @@ class EditorOverlayPainter extends CustomPainter {
 
     // Rule of Thirds Grid
     final gridPaint = Paint()
-      ..color = Colors.white.withOpacity(0.2)
+      ..color = Colors.white.withValues(alpha: 0.2)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
 

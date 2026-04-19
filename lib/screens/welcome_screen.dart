@@ -148,7 +148,7 @@ class WelcomeScreen extends StatelessWidget {
             ? context.surfaceLightColor
             : const Color(0xFFF1F5F9);
         final Color farColor = context.isDark
-            ? context.textLow.withOpacity(0.2)
+            ? context.textLow.withValues(alpha: 0.2)
             : const Color(0xFF94A3B8);
 
         final Color iconColor = Color.lerp(nearColor, farColor, t)!;

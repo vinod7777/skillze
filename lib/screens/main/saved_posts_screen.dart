@@ -70,7 +70,7 @@ class SavedPostsScreen extends StatelessWidget {
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
+                                color: Colors.black.withValues(alpha: 0.05),
                                 blurRadius: 20,
                               ),
                             ],
@@ -78,7 +78,7 @@ class SavedPostsScreen extends StatelessWidget {
                           child: Icon(
                             Icons.bookmark_border_rounded,
                             size: 48,
-                            color: context.primary.withOpacity(0.4),
+                            color: context.primary.withValues(alpha: 0.4),
                           ),
                         ),
                         const SizedBox(height: 24),

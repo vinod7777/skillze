@@ -181,10 +181,10 @@ class _InterestSelectionScreenState extends State<InterestSelectionScreen> {
                               duration: const Duration(milliseconds: 200),
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                               decoration: BoxDecoration(
-                                color: context.primary.withOpacity(0.1),
+                                color: context.primary.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
-                                  color: context.primary.withOpacity(0.5),
+                                  color: context.primary.withValues(alpha: 0.5),
                                   width: 1.5,
                                 ),
                               ),
@@ -278,13 +278,13 @@ class _InterestSelectionScreenState extends State<InterestSelectionScreen> {
         color: isSelected ? context.primary : context.surfaceColor,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: isSelected ? context.primary : (isCustom ? context.primary.withOpacity(0.3) : context.border),
+          color: isSelected ? context.primary : (isCustom ? context.primary.withValues(alpha: 0.3) : context.border),
           width: 1.5,
         ),
         boxShadow: isSelected
             ? [
                 BoxShadow(
-                  color: context.primary.withOpacity(0.2),
+                  color: context.primary.withValues(alpha: 0.2),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 )

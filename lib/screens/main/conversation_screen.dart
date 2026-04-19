@@ -16,6 +16,9 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../services/notification_service.dart';
 import '../../services/push_notification_service.dart';
 
+import '../../services/call_service.dart';
+import 'call_screen.dart';
+
 import '../../services/profanity_filter_service.dart';
 import '../../utils/profanity_helper.dart';
 import '../../utils/mention_helper.dart';
@@ -335,6 +338,45 @@ class _ConversationScreenState extends State<ConversationScreen>
       }
     });
     _searchFocus.addListener(() => setState(() => _isSearchFocused = _searchFocus.hasFocus));
+  }
+
+  Future<void> _startCall(bool isVideo) async {
+    if (_iBlockedOther || _otherBlockedMe) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cannot call this user')),
+      );
+      return;
+    }
+
+    final callService = CallService();
+    await callService.initialize();
+
+    // Get callee avatar
+    String? calleeAvatar;
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.otherUserId)
+          .get();
+      calleeAvatar = doc.data()?['profileImageUrl'];
+    } catch (_) {}
+
+    await callService.startCall(
+      calleeId: widget.otherUserId,
+      calleeName: widget.otherUserName,
+      calleeAvatar: calleeAvatar,
+      chatId: widget.chatId,
+      isVideo: isVideo,
+    );
+
+    if (mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const CallScreen(isIncoming: false),
+        ),
+      );
+    }
   }
 
   @override
@@ -809,7 +851,7 @@ class _ConversationScreenState extends State<ConversationScreen>
                           gradient: LinearGradient(
                             colors: [
                               context.primary,
-                              context.primary.withOpacity(0.8),
+                              context.primary.withValues(alpha: 0.8),
                             ],
                           ),
                         );
@@ -853,6 +895,16 @@ class _ConversationScreenState extends State<ConversationScreen>
                 });
               },
             ),
+          IconButton(
+            icon: Icon(Icons.call_rounded, color: context.textHigh, size: 22),
+            onPressed: () => _startCall(false),
+            tooltip: 'Voice Call',
+          ),
+          IconButton(
+            icon: Icon(Icons.videocam_rounded, color: context.textHigh, size: 24),
+            onPressed: () => _startCall(true),
+            tooltip: 'Video Call',
+          ),
           const SizedBox(width: 8),
         ],
       ),
@@ -904,20 +956,20 @@ class _ConversationScreenState extends State<ConversationScreen>
                                 Icon(
                                   Icons.chat_bubble_outline,
                                   size: 64,
-                                  color: context.textHigh.withOpacity(0.2),
+                                  color: context.textHigh.withValues(alpha: 0.2),
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
                                   'No messages yet',
                                   style: TextStyle(
-                                    color: context.textHigh.withOpacity(0.5),
+                                    color: context.textHigh.withValues(alpha: 0.5),
                                   ),
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
                                   'Start a conversation!',
                                   style: TextStyle(
-                                    color: context.textHigh.withOpacity(0.3),
+                                    color: context.textHigh.withValues(alpha: 0.3),
                                     fontSize: 12,
                                   ),
                                 ),
@@ -1040,7 +1092,7 @@ class _ConversationScreenState extends State<ConversationScreen>
                             decoration: BoxDecoration(
                               color: context.isDark ? Colors.white12 : Colors.grey[200],
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: context.textHigh.withOpacity(0.2)),
+                              border: Border.all(color: context.textHigh.withValues(alpha: 0.2)),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -1079,7 +1131,7 @@ class _ConversationScreenState extends State<ConversationScreen>
                       vertical: 12,
                       horizontal: 24,
                     ),
-                    color: context.textHigh.withOpacity(0.05),
+                    color: context.textHigh.withValues(alpha: 0.05),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -1119,7 +1171,7 @@ class _ConversationScreenState extends State<ConversationScreen>
                         top: Radius.circular(10),
                       ),
                       border: Border(
-                        top: BorderSide(color: context.textHigh.withOpacity(0.2)),
+                        top: BorderSide(color: context.textHigh.withValues(alpha: 0.2)),
                       ),
                       boxShadow: [
                         BoxShadow(
@@ -1155,7 +1207,7 @@ class _ConversationScreenState extends State<ConversationScreen>
                           ),
                           subtitle: Text(
                             name,
-                            style: TextStyle(color: context.textHigh.withOpacity(0.5), fontSize: 12),
+                            style: TextStyle(color: context.textHigh.withValues(alpha: 0.5), fontSize: 12),
                           ),
                           onTap: () => _insertMention(username),
                         );
@@ -1169,13 +1221,13 @@ class _ConversationScreenState extends State<ConversationScreen>
                     color: context.bg,
                     border: Border(
                       top: BorderSide(
-                        color: context.textHigh.withOpacity(0.2),
+                        color: context.textHigh.withValues(alpha: 0.2),
                         width: 0.5,
                       ),
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.03),
+                        color: Colors.black.withValues(alpha: 0.03),
                         blurRadius: 10,
                         offset: const Offset(0, -4),
                       ),
@@ -1217,7 +1269,7 @@ class _ConversationScreenState extends State<ConversationScreen>
                                   decoration: BoxDecoration(
                                     color: context.surfaceLightColor,
                                     borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: context.textHigh.withOpacity(0.2)),
+                                    border: Border.all(color: context.textHigh.withValues(alpha: 0.2)),
                                   ),
                                   clipBehavior: Clip.antiAlias,
                                   child: TextField(
@@ -1289,7 +1341,7 @@ class _ConversationScreenState extends State<ConversationScreen>
                                     shape: BoxShape.circle,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: context.textHigh.withOpacity(0.3),
+                                        color: context.textHigh.withValues(alpha: 0.3),
                                         blurRadius: 8,
                                         offset: const Offset(0, 3),
                                       ),
@@ -1474,14 +1526,14 @@ class _ConversationScreenState extends State<ConversationScreen>
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           decoration: BoxDecoration(
             color: context.isDark
-                ? Colors.white.withOpacity(0.1)
-                : Colors.black.withOpacity(0.05),
+                ? Colors.white.withValues(alpha: 0.1)
+                : Colors.black.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
             _getDateHeaderText(date),
             style: TextStyle(
-              color: context.textHigh.withOpacity(0.6),
+              color: context.textHigh.withValues(alpha: 0.6),
               fontSize: 11,
               fontWeight: FontWeight.w600,
             ),
@@ -1588,7 +1640,7 @@ class _ConversationScreenState extends State<ConversationScreen>
                         : null,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                       ),
@@ -1627,8 +1679,8 @@ class _ConversationScreenState extends State<ConversationScreen>
                                           width: 200,
                                           alignment: Alignment.center,
                                           color: context.isDark
-                                              ? Colors.white.withOpacity(0.05)
-                                              : Colors.black.withOpacity(0.05),
+                                              ? Colors.white.withValues(alpha: 0.05)
+                                              : Colors.black.withValues(alpha: 0.05),
                                           child: CircularProgressIndicator(
                                             value:
                                                 loadingProgress
@@ -1639,7 +1691,7 @@ class _ConversationScreenState extends State<ConversationScreen>
                                                       loadingProgress
                                                           .expectedTotalBytes!
                                                 : null,
-                                            color: context.primary.withOpacity(0.5),
+                                            color: context.primary.withValues(alpha: 0.5),
                                             strokeWidth: 2,
                                           ),
                                         );
@@ -1650,8 +1702,8 @@ class _ConversationScreenState extends State<ConversationScreen>
                                         width: 200,
                                         alignment: Alignment.center,
                                         color: context.isDark
-                                            ? Colors.white.withOpacity(0.05)
-                                            : Colors.black.withOpacity(0.05),
+                                            ? Colors.white.withValues(alpha: 0.05)
+                                            : Colors.black.withValues(alpha: 0.05),
                                         child: Icon(
                                           Icons.broken_image_rounded,
                                           color: context.textLow,
@@ -1673,7 +1725,7 @@ class _ConversationScreenState extends State<ConversationScreen>
                             height: 1.3,
                           ),
                           linkStyle: TextStyle(
-                            color: isMe ? context.onPrimary.withOpacity(0.8) : context.primary,
+                            color: isMe ? context.onPrimary.withValues(alpha: 0.8) : context.primary,
                             fontWeight: FontWeight.bold,
                             decoration: TextDecoration.underline,
                           ),
@@ -1696,7 +1748,7 @@ class _ConversationScreenState extends State<ConversationScreen>
                               fontSize: 14,
                             ),
                             bodyStyle: TextStyle(
-                              color: isMe ? context.onPrimary.withOpacity(0.7) : context.textMed,
+                              color: isMe ? context.onPrimary.withValues(alpha: 0.7) : context.textMed,
                               fontSize: 12,
                             ),
                             borderRadius: 12,
@@ -1721,7 +1773,7 @@ class _ConversationScreenState extends State<ConversationScreen>
                         Text(
                           'edited ',
                           style: TextStyle(
-                            color: context.textMed.withOpacity(0.6),
+                            color: context.textMed.withValues(alpha: 0.6),
                             fontSize: 10,
                             fontStyle: FontStyle.italic,
                           ),

@@ -950,7 +950,7 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
                                 Text(
                                   topSkills,
                                   style: TextStyle(
-                                    color: context.primary.withOpacity(0.9), 
+                                    color: context.primary.withValues(alpha: 0.9), 
                                     fontSize: 10, 
                                     fontWeight: FontWeight.w600,
                                     height: 1.1,
@@ -963,7 +963,7 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
                                   Text(
                                     timeAgo,
                                     style: TextStyle(
-                                      color: context.textMed.withOpacity(0.7), 
+                                      color: context.textMed.withValues(alpha: 0.7), 
                                       fontSize: 11,
                                       height: 1.1,
                                     ),
@@ -973,7 +973,7 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
                                     Text(
                                       '• (edited)',
                                       style: TextStyle(
-                                        color: context.textMed.withOpacity(0.8), 
+                                        color: context.textMed.withValues(alpha: 0.8), 
                                         fontSize: 10,
                                         fontStyle: FontStyle.italic,
                                       ),
@@ -983,11 +983,11 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
                                   Icon(
                                     isPrivate ? Icons.people_alt_outlined : Icons.public, 
                                     size: 11, 
-                                    color: context.textMed.withOpacity(0.7),
+                                    color: context.textMed.withValues(alpha: 0.7),
                                   ),
                                   if (location != null && location.isNotEmpty) ...[
                                     const SizedBox(width: 4),
-                                    Text('•', style: TextStyle(color: context.textMed.withOpacity(0.7), fontSize: 11)),
+                                    Text('•', style: TextStyle(color: context.textMed.withValues(alpha: 0.7), fontSize: 11)),
                                     const SizedBox(width: 4),
                                     Icon(Icons.location_on_outlined, size: 10, color: context.primary),
                                     const SizedBox(width: 2),
@@ -997,7 +997,7 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: TextStyle(
-                                          color: context.primary.withOpacity(0.8),
+                                          color: context.primary.withValues(alpha: 0.8),
                                           fontSize: 10.5,
                                           fontWeight: FontWeight.w600,
                                         ),
@@ -1161,7 +1161,7 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
                                   ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.2),
+                                      color: Colors.black.withValues(alpha: 0.2),
                                       blurRadius: 4,
                                       spreadRadius: 1,
                                     ),
@@ -1206,7 +1206,7 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
                       borderRadius: BorderRadius.circular(8),
                       boxShadow: [
                         BoxShadow(
-                          color: context.textHigh.withOpacity(0.06),
+                          color: context.textHigh.withValues(alpha: 0.06),
                           blurRadius: 10,
                           offset: const Offset(0, 3),
                         ),

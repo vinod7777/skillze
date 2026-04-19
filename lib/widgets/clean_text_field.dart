@@ -84,20 +84,20 @@ class _CleanTextFieldState extends State<CleanTextField> {
             ? []
             : [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
+                  color: Colors.black.withValues(alpha: 0.08),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
                 if (_isFocused)
                   BoxShadow(
-                    color: context.primary.withOpacity(0.08),
+                    color: context.primary.withValues(alpha: 0.08),
                     blurRadius: 15,
                     spreadRadius: 2,
                     offset: const Offset(0, 4),
                   ),
               ],
         border: widget.errorText != null
-            ? Border.all(color: Colors.red.withOpacity(0.5), width: 1.5)
+            ? Border.all(color: Colors.red.withValues(alpha: 0.5), width: 1.5)
             : null,
       ),
       child: Column(

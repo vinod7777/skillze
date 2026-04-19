@@ -9,6 +9,7 @@ import 'screens/splash_screen.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'services/push_notification_service.dart';
+import 'services/call_service.dart';
 import 'services/notification_service.dart';
 import 'screens/onboarding/skill_selection_screen.dart';
 import 'screens/onboarding/interest_selection_screen.dart';
@@ -46,6 +47,7 @@ void main() async {
   // Initialize service & collect token
   try {
     await PushNotificationService.initialize();
+    await PushNotificationService.setupCallKit();
     DeepLinkService.initialize(PushNotificationService.navigatorKey);
   } catch (e) {
     debugPrint("Push notification initialization error: $e");
@@ -76,6 +78,14 @@ class _FeedAppState extends State<FeedApp> with WidgetsBindingObserver {
 
     _authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
       if (user != null) {
+        // App is authenticated
+        final callService = CallService();
+        callService.initialize();
+        callService.onIncomingCall = (callId, callerName, callerAvatar, isVideo) {
+          PushNotificationService.setupCallKit(); // make sure it's active
+          // Note: we'd show the call kit UI via a static method if we exposed it.
+        };
+        callService.listenForIncomingCalls();
         // App is authenticated, ensure push token is synced & cache actor info
         PushNotificationService.updateToken();
         NotificationService.preCacheActor();

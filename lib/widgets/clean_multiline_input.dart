@@ -80,13 +80,13 @@ class _CleanMultilineInputState extends State<CleanMultilineInput> {
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
           if (_isFocused)
             BoxShadow(
-              color: context.primary.withOpacity(0.08),
+              color: context.primary.withValues(alpha: 0.08),
               blurRadius: 15,
               spreadRadius: 2,
               offset: const Offset(0, 4),

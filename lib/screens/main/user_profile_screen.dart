@@ -500,7 +500,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                                     margin: const EdgeInsets.all(16),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
-                                      side: BorderSide(color: Colors.grey.withOpacity(0.05)),
+                                      side: BorderSide(color: Colors.grey.withValues(alpha: 0.05)),
                                     ),
                                   ),
                               );
@@ -516,7 +516,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: context.primary.withOpacity(0.2),
+                                  color: context.primary.withValues(alpha: 0.2),
                                   width: 2,
                                 ),
                               ),
@@ -584,7 +584,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                             _userData!['status'],
                             style: TextStyle(
                               fontSize: 14,
-                              color: context.textMed.withOpacity(0.8),
+                              color: context.textMed.withValues(alpha: 0.8),
                             ),
                           ),
                         ),
@@ -774,8 +774,8 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                           end: Alignment.bottomRight,
                           colors: [
                             context.surfaceLightColor,
-                            context.surfaceLightColor.withOpacity(0.8),
-                            context.primary.withOpacity(0.15),
+                            context.surfaceLightColor.withValues(alpha: 0.8),
+                            context.primary.withValues(alpha: 0.15),
                           ],
                         ),
                       ),
@@ -802,7 +802,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                       child: Container(
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.4),
+                          color: Colors.black.withValues(alpha: 0.4),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: const Icon(Icons.collections_rounded, color: Colors.white, size: 14),
@@ -900,14 +900,14 @@ class _UserProfileScreenState extends State<UserProfileScreen>
           decoration: BoxDecoration(
             color: context.surfaceLightColor,
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: context.border.withOpacity(0.5)),
+            border: Border.all(color: context.border.withValues(alpha: 0.5)),
           ),
           child: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: context.primary.withOpacity(0.1),
+                  color: context.primary.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(Icons.bolt_rounded, color: context.primary, size: 24),

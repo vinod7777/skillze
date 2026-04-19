@@ -493,7 +493,7 @@ class _FullScreenPostViewerState extends State<FullScreenPostViewer> {
                         margin: const EdgeInsets.symmetric(horizontal: 4.0),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.white.withOpacity(_currentMediaIndex == entry.key ? 0.9 : 0.4),
+                          color: Colors.white.withValues(alpha: _currentMediaIndex == entry.key ? 0.9 : 0.4),
                           boxShadow: [
                             BoxShadow(color: Colors.black26, blurRadius: 4, spreadRadius: 1),
                           ],

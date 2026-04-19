@@ -9,10 +9,7 @@ void main() {
 
   final replacements = {
     'BorderRadius.circular(8)': 'BorderRadius.circular(8)',
-    'BorderRadius.circular(8)': 'BorderRadius.circular(8)',
     'BorderRadius.circular(10)': 'BorderRadius.circular(10)',
-    'BorderRadius.circular(10)': 'BorderRadius.circular(10)',
-    'Radius.circular(12)': 'Radius.circular(12)',
     'Radius.circular(12)': 'Radius.circular(12)',
     'Radius.circular(10)': 'Radius.circular(10)',
   };

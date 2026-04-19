@@ -113,7 +113,7 @@ class _InterestsBottomSheetState extends State<InterestsBottomSheet> {
             borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 20,
                 offset: const Offset(0, -5),
               ),
@@ -138,27 +138,29 @@ class _InterestsBottomSheetState extends State<InterestsBottomSheet> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Personalize Feed',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: context.textHigh,
-                            letterSpacing: -0.5,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Personalize Feed',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: context.textHigh,
+                              letterSpacing: -0.5,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Select skills you want to explore',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: context.textLow,
+                          const SizedBox(height: 4),
+                          Text(
+                            'Select skills you want to explore',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: context.textLow,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                     TextButton(
                       onPressed: () async {
@@ -206,9 +208,9 @@ class _InterestsBottomSheetState extends State<InterestsBottomSheet> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: context.primary.withOpacity(0.1),
+                          color: context.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: context.primary.withOpacity(0.3)),
+                          border: Border.all(color: context.primary.withValues(alpha: 0.3)),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -261,10 +263,10 @@ class _InterestsBottomSheetState extends State<InterestsBottomSheet> {
                               duration: const Duration(milliseconds: 200),
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                               decoration: BoxDecoration(
-                                color: context.primary.withOpacity(0.1),
+                                color: context.primary.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
-                                  color: context.primary.withOpacity(0.5),
+                                  color: context.primary.withValues(alpha: 0.5),
                                   width: 1.5,
                                   style: BorderStyle.solid,
                                 ),
@@ -309,12 +311,12 @@ class _InterestsBottomSheetState extends State<InterestsBottomSheet> {
                                 color: isSelected ? context.primary : context.surfaceLightColor,
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
-                                  color: isSelected ? context.primary : (isCustom ? context.primary.withOpacity(0.3) : context.border),
+                                  color: isSelected ? context.primary : (isCustom ? context.primary.withValues(alpha: 0.3) : context.border),
                                   width: 1.5,
                                 ),
                                 boxShadow: isSelected ? [
                                   BoxShadow(
-                                    color: context.primary.withOpacity(0.2),
+                                    color: context.primary.withValues(alpha: 0.2),
                                     blurRadius: 8,
                                     offset: const Offset(0, 3),
                                   )

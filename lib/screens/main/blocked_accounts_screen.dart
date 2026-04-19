@@ -44,13 +44,13 @@ class BlockedAccountsScreen extends StatelessWidget {
                         Icon(
                           Icons.block,
                           size: 64,
-                          color: colorScheme.onSurface.withOpacity(0.3),
+                          color: colorScheme.onSurface.withValues(alpha: 0.3),
                         ),
                         const SizedBox(height: 16),
                         Text(
                           'No blocked accounts',
                           style: TextStyle(
-                            color: colorScheme.onSurface.withOpacity(0.6),
+                            color: colorScheme.onSurface.withValues(alpha: 0.6),
                             fontSize: 16,
                           ),
                         ),
@@ -58,7 +58,7 @@ class BlockedAccountsScreen extends StatelessWidget {
                         Text(
                           'Accounts you block will appear here',
                           style: TextStyle(
-                            color: colorScheme.onSurface.withOpacity(0.4),
+                            color: colorScheme.onSurface.withValues(alpha: 0.4),
                             fontSize: 14,
                           ),
                         ),
@@ -123,7 +123,7 @@ class BlockedAccountsScreen extends StatelessWidget {
                               ? Text(
                                   '@$username',
                                   style: TextStyle(
-                                    color: colorScheme.onSurface.withOpacity(0.5),
+                                    color: colorScheme.onSurface.withValues(alpha: 0.5),
                                   ),
                                 )
                               : null,

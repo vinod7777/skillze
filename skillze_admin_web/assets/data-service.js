@@ -207,14 +207,24 @@ export async function resolveReport(reportId, actionTaken = true) {
 export function listenToChats(callback) {
   const chatsRef = collection(db, "chats");
   
+  // We use a simple listener to avoid index requirements for unordered docs,
+  // then we sort in memory to ensure 100% visibility of all chats.
   return onSnapshot(chatsRef, (snapshot) => {
     const chats = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     }));
+    
+    // Sort by last active timestamp (handles multiple possible field names)
+    chats.sort((a, b) => {
+      const tsA = a.updatedAt?.seconds || a.lastMessageTimestamp?.seconds || a.createdAt?.seconds || 0;
+      const tsB = b.updatedAt?.seconds || b.lastMessageTimestamp?.seconds || b.createdAt?.seconds || 0;
+      return tsB - tsA;
+    });
+
     callback(chats);
   }, (error) => {
-    console.error("Chats List Error:", error);
+    console.error("Chats Synchronization Error:", error);
   });
 }
 

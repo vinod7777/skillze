@@ -283,7 +283,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
               child: Container(
                 constraints: const BoxConstraints(maxHeight: 180),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.8),
+                  color: Colors.black.withValues(alpha: 0.8),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: Colors.white10),
                 ),
@@ -320,9 +320,9 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.4),
+                          color: Colors.black.withValues(alpha: 0.4),
                           borderRadius: BorderRadius.circular(30),
-                          border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
                         ),
                         child: TextField(
                           controller: _captionController,
@@ -330,7 +330,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                           decoration: InputDecoration(
                             border: InputBorder.none,
                             hintText: 'Add a caption...',
-                            hintStyle: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 16),
+                            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 16),
                             contentPadding: const EdgeInsets.symmetric(vertical: 14),
                             filled: true,
                             fillColor: Colors.transparent,
@@ -389,7 +389,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
       decoration: BoxDecoration(
         color: Colors.black,
         gradient: LinearGradient(
-          colors: [Colors.black, context.primary.withOpacity(0.2)],
+          colors: [Colors.black, context.primary.withValues(alpha: 0.2)],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
@@ -459,7 +459,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.5),
+          color: Colors.black.withValues(alpha: 0.5),
           shape: BoxShape.circle,
         ),
         child: Icon(icon, color: Colors.white, size: 24),
@@ -489,7 +489,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 5)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 5)),
         ],
       ),
       child: Material(

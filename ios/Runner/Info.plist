@@ -46,9 +46,9 @@
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>Skillze needs camera access to capture photos and videos</string>
+	<string>Feed Native needs camera access for video calls</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Skillze needs microphone access to record videos</string>
+	<string>Feed Native needs microphone access for audio and video calls</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Skillze needs photo library access to upload profile pictures and post images</string>
 	<key>NSLocationWhenInUseUsageDescription</key>

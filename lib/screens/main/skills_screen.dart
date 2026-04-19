@@ -174,7 +174,7 @@ class _SkillsScreenState extends State<SkillsScreen> {
                       border: Border.all(color: context.border, width: 1.5),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -377,7 +377,7 @@ class _SkillsScreenState extends State<SkillsScreen> {
             style: TextStyle(
               fontSize: 11,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-              color: isSelected ? Colors.white : context.textMed.withOpacity(0.7),
+              color: isSelected ? Colors.white : context.textMed.withValues(alpha: 0.7),
             ),
           ),
         ),
@@ -437,7 +437,7 @@ class _SkillsScreenState extends State<SkillsScreen> {
               const SizedBox(height: 8),
               Text(
                 'Define your role or current focus briefly.',
-                style: TextStyle(color: context.textMed.withOpacity(0.7), fontSize: 14),
+                style: TextStyle(color: context.textMed.withValues(alpha: 0.7), fontSize: 14),
               ),
               const SizedBox(height: 24),
               TextField(
@@ -448,7 +448,7 @@ class _SkillsScreenState extends State<SkillsScreen> {
                   filled: true,
                   fillColor: context.surfaceLightColor,
                   hintText: 'e.g. Fullstack Developer, Product Designer',
-                  hintStyle: TextStyle(color: context.textMed.withOpacity(0.4)),
+                  hintStyle: TextStyle(color: context.textMed.withValues(alpha: 0.4)),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: BorderSide.none,

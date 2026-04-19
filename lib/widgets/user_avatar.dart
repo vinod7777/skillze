@@ -56,7 +56,7 @@ class UserAvatar extends StatelessWidget {
         shape: BoxShape.circle,
         color:
             backgroundColor ??
-            AvatarHelper.getNameColor(name).withOpacity(0.15),
+            AvatarHelper.getNameColor(name).withValues(alpha: 0.15),
         border: border,
         gradient: gradient,
       ),
@@ -100,7 +100,7 @@ class UserAvatar extends StatelessWidget {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 4,
                   ),
                 ],
@@ -116,7 +116,7 @@ class UserAvatar extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: bgColor.withOpacity(0.1),
+        color: bgColor.withValues(alpha: 0.1),
       ),
       child: Center(
         child: Text(
@@ -141,7 +141,7 @@ class UserAvatar extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: isStorySeen
-            ? context.textLow.withOpacity(0.5)
+            ? context.textLow.withValues(alpha: 0.5)
             : const Color(0xFF0F2F6A), // Precise brand blue requested by user
       ),
       child: Container(
@@ -195,7 +195,7 @@ class _PulseSkeletonState extends State<_PulseSkeleton>
           height: widget.radius * 2,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: context.textLow.withOpacity(_animation.value),
+            color: context.textLow.withValues(alpha: _animation.value),
           ),
         );
       },

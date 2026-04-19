@@ -41,6 +41,12 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
   LatLng? _userLocation;
   bool _isLoadingLocation = true;
 
+  // Pagination & Search control
+  DocumentSnapshot? _lastUserDoc;
+  final int _pageSize = 20;
+  bool _hasMoreUsers = true;
+  final bool _isLoadingMore = false;
+
   // All fetched users (unfiltered, only distance-filtered)
   List<Map<String, dynamic>> _allFetchedUsers = [];
   // Users currently displayed (after search + distance filter)
@@ -329,7 +335,6 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
           'locationUpdatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
       }
-
       _fetchNearbyUsers();
       _fetchNearbyPosts();
     } catch (e) {
@@ -349,28 +354,61 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
     _fetchNearbyPosts();
   }
 
-  Future<void> _fetchNearbyUsers() async {
+  Future<void> _fetchNearbyUsers({bool reset = false}) async {
+    if (reset) {
+      _lastUserDoc = null;
+      _hasMoreUsers = true;
+      _allFetchedUsers.clear();
+    }
+    
+    if (!_hasMoreUsers) return;
+
     try {
-      // Fetch all users who have registered a location (latitude != 0)
-      // Note: In a production app with many users, you would use Geohashing.
-      final snapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .where('latitude', isNotEqualTo: 0)
-          .get();
+      // Fetch all users who have registered a location
+      Query query = FirebaseFirestore.instance.collection('users').where('latitude', isGreaterThan: -91);
+      
+      if (_lastUserDoc != null) {
+        query = query.startAfterDocument(_lastUserDoc!);
+      }
+
+      // ── Fix: Use a safe batch size for Global Discovery ──
+      // If showing the full map, fetch a much larger chunk to populate the globe.
+      final int actualPageSize = (_rangeKm == 0 && showMap) ? 500 : (_rangeKm == 0 ? 100 : _pageSize);
+      
+      final snapshot = await query.limit(actualPageSize).get(const GetOptions(source: Source.serverAndCache));
+      
+      if (snapshot.docs.length < actualPageSize) {
+        _hasMoreUsers = false;
+      }
+      _lastUserDoc = snapshot.docs.isNotEmpty ? snapshot.docs.last : null;
 
       final currentUser = FirebaseAuth.instance.currentUser;
       final List<Map<String, dynamic>> users = [];
 
       for (var doc in snapshot.docs) {
-        final data = doc.data();
+        final data = doc.data() as Map<String, dynamic>?;
+        if (data == null) continue;
+        
         if (data['latitude'] != null && data['longitude'] != null) {
           if (currentUser != null && doc.id == currentUser.uid) continue;
 
-          // Skip users with ghost mode enabled - Ensure field name matches privacy settings
           if (data['isGhostMode'] == true || data['ghostMode'] == true) continue;
 
-          final userLat = (data['latitude'] as num).toDouble();
-          final userLng = (data['longitude'] as num).toDouble();
+          double userLat = 0.0;
+          double userLng = 0.0;
+          
+          if (data['latitude'] is num) {
+            userLat = (data['latitude'] as num).toDouble();
+          } else if (data['latitude'] is String) {
+            userLat = double.tryParse(data['latitude']) ?? 0.0;
+          }
+          
+          if (data['longitude'] is num) {
+            userLng = (data['longitude'] as num).toDouble();
+          } else if (data['longitude'] is String) {
+            userLng = double.tryParse(data['longitude']) ?? 0.0;
+          }
+
           final userLatLng = LatLng(userLat, userLng);
 
           // Accurate distance calculation
@@ -449,7 +487,13 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
 
       if (mounted) {
         setState(() {
-          _allFetchedUsers = users;
+          if (reset) {
+             _allFetchedUsers = users;
+          } else {
+             // Append and remove duplicates
+             final existingIds = _allFetchedUsers.map((u) => u['uid']).toSet();
+             _allFetchedUsers.addAll(users.where((u) => !existingIds.contains(u['uid'])));
+          }
           _isLoadingUsers = false;
         });
         _applySearchFilter();
@@ -577,7 +621,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                 color: context.surfaceColor,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -615,7 +659,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                               decoration: BoxDecoration(
-                                color: context.primary.withOpacity(0.1),
+                                color: context.primary.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Icon(
@@ -674,13 +718,13 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                 child: Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [context.surfaceColor, context.surfaceColor.withOpacity(0.95)],
+                      colors: [context.surfaceColor, context.surfaceColor.withValues(alpha: 0.95)],
                     ),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: context.primary.withOpacity(0.2)),
+                    border: Border.all(color: context.primary.withValues(alpha: 0.2)),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.12),
+                        color: Colors.black.withValues(alpha: 0.12),
                         blurRadius: 15,
                         offset: const Offset(0, 4),
                       ),
@@ -693,7 +737,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                       Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: context.primary.withOpacity(0.1),
+                          color: context.primary.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -757,9 +801,19 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
               mapController: _mapController,
               options: MapOptions(
                 initialCenter: _userLocation ?? const LatLng(17.3850, 78.4867),
-                initialZoom: _rangeKm <= 5
-                    ? 14.0
-                    : (_rangeKm <= 10 ? 12.0 : (_rangeKm <= 25 ? 10.0 : 6.0)),
+                initialZoom: _rangeKm == 0
+                    ? 2.0 // Zoom out fully for full map scope
+                    : (_rangeKm <= 5
+                        ? 14.0
+                        : (_rangeKm <= 10 ? 12.0 : (_rangeKm <= 25 ? 10.0 : 6.0))),
+                minZoom: 2.0, // Allow zooming out entirely
+                maxZoom: 24.0, // No practical limit for zooming in
+                cameraConstraint: CameraConstraint.contain(
+                  bounds: LatLngBounds(
+                    const LatLng(-90, -180),
+                    const LatLng(90, 180),
+                  ),
+                ),
                 interactionOptions: const InteractionOptions(
                   flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
                 ),
@@ -768,6 +822,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                 TileLayer(
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   userAgentPackageName: 'com.example.feedFlutter',
+                  maxNativeZoom: 19,
                 ),
                 MarkerLayer(
                   markers: [
@@ -785,7 +840,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: context.accent.withOpacity(0.5),
+                                    color: context.accent.withValues(alpha: 0.5),
                                     blurRadius: 10,
                                     spreadRadius: 2,
                                   ),
@@ -869,7 +924,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                                   vertical: 2,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: context.textHigh.withOpacity(0.7),
+                                  color: context.textHigh.withValues(alpha: 0.7),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
@@ -969,7 +1024,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: LinearGradient(
-                          colors: [context.primary, context.primary.withOpacity(0.7)],
+                          colors: [context.primary, context.primary.withValues(alpha: 0.7)],
                         ),
                       ),
                       child: UserAvatar(
@@ -1053,7 +1108,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                       ),
                       decoration: BoxDecoration(
                         color: isMatched
-                            ? context.primary.withOpacity(0.2)
+                            ? context.primary.withValues(alpha: 0.2)
                             : context.surfaceColor,
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -1105,7 +1160,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                         );
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: context.primary.withOpacity(0.1),
+                        backgroundColor: context.primary.withValues(alpha: 0.1),
                         foregroundColor: context.primary,
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(vertical: 14),
@@ -1149,7 +1204,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
       );
     }
     return RefreshIndicator(
-      onRefresh: _fetchNearbyUsers,
+      onRefresh: () => _fetchNearbyUsers(reset: true),
       displacement: MediaQuery.of(context).padding.top + 100,
       color: context.primary,
       backgroundColor: context.surfaceColor,
@@ -1209,7 +1264,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: context.primary.withOpacity(0.1),
+                                color: context.primary.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
@@ -1238,7 +1293,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                           Text(
                             user['role'],
                             style: TextStyle(
-                              color: context.primary.withOpacity(0.8),
+                              color: context.primary.withValues(alpha: 0.8),
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                             ),
@@ -1352,7 +1407,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                   color: context.primary,
                   borderRadius: BorderRadius.circular(22),
                   boxShadow: [
-                    BoxShadow(color: context.primary.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 2)),
+                    BoxShadow(color: context.primary.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2)),
                   ],
                 ),
               ),
@@ -1444,10 +1499,10 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
         margin: const EdgeInsets.only(right: 10),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: isActive ? context.primary.withOpacity(0.1) : Colors.transparent,
+          color: isActive ? context.primary.withValues(alpha: 0.1) : Colors.transparent,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isActive ? context.primary : context.border.withOpacity(0.5),
+            color: isActive ? context.primary : context.border.withValues(alpha: 0.5),
             width: 1,
           ),
         ),
@@ -1616,8 +1671,13 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                                 } else {
                                   _rangeKm = double.tryParse(option.split(' ')[0]) ?? 25.0;
                                 }
-                                _fetchNearbyUsers();
-                                _fetchNearbyPosts();
+                                  _fetchNearbyUsers(reset: true);
+                                  _fetchNearbyPosts();
+
+                                  if (showMap && _userLocation != null) {
+                                    final double newZoom = _rangeKm == 0 ? 2.0 : (_rangeKm <= 5 ? 14.0 : (_rangeKm <= 10 ? 12.0 : (_rangeKm <= 25 ? 10.0 : 6.0)));
+                                    try { _mapController.move(_userLocation!, newZoom); } catch(_) {}
+                                  }
                               }
                               _applySearchFilter();
                             });
@@ -1627,9 +1687,9 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                             margin: const EdgeInsets.only(bottom: 12),
                             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                             decoration: BoxDecoration(
-                              color: isSelected ? context.primary.withOpacity(0.1) : context.surfaceLightColor,
+                              color: isSelected ? context.primary.withValues(alpha: 0.1) : context.surfaceLightColor,
                               borderRadius: BorderRadius.circular(8),
-                              border: isSelected ? Border.all(color: context.primary.withOpacity(0.3)) : null,
+                              border: isSelected ? Border.all(color: context.primary.withValues(alpha: 0.3)) : null,
                             ),
                             child: Row(
                               children: [

@@ -126,7 +126,7 @@
     let allChats = [];
     let filteredChats = [];
     let currentPage = 1;
-    const pageSize = 10;
+    const pageSize = 25;
     let currentActiveChatId = null;
 
     function renderThreads() {
@@ -136,19 +136,32 @@
       const pageData = filteredChats.slice(start, end);
 
       if (filteredChats.length === 0) {
-        threadList.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--on-surface-variant);">No conversations found.</div>';
+        threadList.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--on-surface-variant);">No conversations identified.</div>';
         paginationText.innerText = "0 results";
         return;
       }
 
       threadList.innerHTML = pageData.map(chat => {
-        const names = chat.participantNames || {};
-        const label = Object.values(names).join(' & ') || 'Anonymous Chat';
-        const lastMsg = chat.lastMessage || 'Scan for policy violations...';
+        // Advanced name resolution
+        const namesMap = { ...(chat.participantNames || {}), ...(chat.participants_data || {}) };
+        Object.keys(namesMap).forEach(uid => {
+          if (typeof namesMap[uid] === 'object' && namesMap[uid].name) {
+            namesMap[uid] = namesMap[uid].name;
+          }
+        });
+
+        const pIds = chat.participants || [];
+        let label = Object.values(namesMap).filter(v => typeof v === 'string').join(' & ');
+        if (!label && pIds.length > 0) {
+          label = pIds.map(id => id.substring(0, 6)).join(' + ');
+        }
+        if (!label) label = 'System Conversation';
+
+        const lastMsg = chat.lastMessage || 'Inspect for platform policy compliance...';
         const isActive = chat.id === currentActiveChatId;
         
         return `
-          <div class="thread-item ${isActive ? 'active' : ''}" onclick="selectChat('${chat.id}', ${JSON.stringify(names).replace(/"/g, '&quot;')})">
+          <div class="thread-item ${isActive ? 'active' : ''}" onclick="selectChat('${chat.id}')">
             <div style="font-weight: 700; font-size: 0.9rem; color: white;">${label}</div>
             <div style="font-size: 0.75rem; color: var(--on-surface-variant); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
               ${lastMsg}
@@ -166,8 +179,15 @@
     function processSearch() {
       const term = searchInput.value.toLowerCase();
       filteredChats = allChats.filter(chat => {
-        const namesStr = Object.values(chat.participantNames || {}).join(' ').toLowerCase();
-        return namesStr.includes(term) || chat.id.toLowerCase().includes(term);
+        // Resolve names for searching too
+        const namesMap = { ...(chat.participantNames || {}), ...(chat.participants_data || {}) };
+        const namesStr = Object.values(namesMap).map(v => (typeof v === 'object' ? v.name : v)).join(' ').toLowerCase();
+        
+        const pIdsStr = (chat.participants || []).join(' ').toLowerCase();
+        const lastMsg = (chat.lastMessage || '').toLowerCase();
+        const id = chat.id.toLowerCase();
+        
+        return namesStr.includes(term) || pIdsStr.includes(term) || lastMsg.includes(term) || id.includes(term);
       });
       currentPage = 1;
       renderThreads();
@@ -182,15 +202,37 @@
 
     listenToChats((chats) => {
       allChats = chats;
+      // Global counter for transparency
+      const title = document.querySelector('.page-title');
+      if (title) title.innerText = `Safety Chat Monitor (${allChats.length})`;
+      
       processSearch();
     });
 
-    window.selectChat = (chatId, participantNames) => {
+    window.selectChat = (chatId) => {
       currentActiveChatId = chatId;
+      const chat = allChats.find(c => c.id === chatId);
+      if (!chat) return;
+
+      // Resolve names Map
+      const participantNames = { ...(chat.participantNames || {}), ...(chat.participants_data || {}) };
+      Object.keys(participantNames).forEach(uid => {
+        if (typeof participantNames[uid] === 'object' && participantNames[uid].name) {
+          participantNames[uid] = participantNames[uid].name;
+        }
+      });
+
+      const participants = chat.participants || [];
+
       // Re-render threads to show active state
       renderThreads();
 
-      const label = Object.values(participantNames).join(' & ');
+      let label = Object.values(participantNames).filter(v => typeof v === 'string').join(' & ');
+      if (!label && participants.length > 0) {
+        label = participants.map(id => id.substring(0, 6)).join(' + ');
+      }
+      if (!label) label = 'System Conversation';
+
       document.getElementById('activeName').innerText = label;
       messageArea.innerHTML = '<div style="margin: auto; color: var(--on-surface-variant);">Connecting to secure transcript stream...</div>';
       

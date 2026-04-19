@@ -82,7 +82,7 @@ class _MessagesScreenState extends State<MessagesScreen> with AutomaticKeepAlive
                       child: Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: context.primary.withOpacity(0.08),
+                          color: context.primary.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
@@ -137,7 +137,7 @@ class _MessagesScreenState extends State<MessagesScreen> with AutomaticKeepAlive
                         child: Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: context.textLow.withOpacity(0.1),
+                            color: context.textLow.withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(Icons.close_rounded, size: 14, color: context.textMed),
@@ -217,7 +217,7 @@ class _MessagesScreenState extends State<MessagesScreen> with AutomaticKeepAlive
                           separatorBuilder: (context, index) => Divider(
                             height: 1, 
                             thickness: 1, 
-                            color: context.border.withOpacity(0.05),
+                            color: context.border.withValues(alpha: 0.05),
                             indent: 80, // Align with text, not avatar
                           ),
                           itemBuilder: (context, index) {
@@ -238,7 +238,7 @@ class _MessagesScreenState extends State<MessagesScreen> with AutomaticKeepAlive
                                 alignment: Alignment.centerRight,
                                 padding: const EdgeInsets.only(right: 24),
                                 decoration: BoxDecoration(
-                                  color: Colors.red.withOpacity(0.1),
+                                  color: Colors.red.withValues(alpha: 0.1),
                                 ),
                                 child: const Icon(Icons.delete_outline_rounded, color: Colors.red),
                               ),
@@ -326,84 +326,103 @@ class _MessagesScreenState extends State<MessagesScreen> with AutomaticKeepAlive
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? context.textHigh.withOpacity(0.05) : context.surfaceColor,
+          color: isSelected ? context.textHigh.withValues(alpha: 0.05) : context.surfaceColor,
           border: isSelected 
             ? Border(
                 left: BorderSide(color: context.textHigh, width: 4),
               )
             : null,
         ),
-        child: Row(
-          children: [
-            UserChatAvatar(
-              userId: otherUserId,
-              name: otherUserName,
-              chatData: chatData,
-              showStatus: false,
-              radius: 22,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: StreamBuilder<DocumentSnapshot>(
+          stream: FirebaseFirestore.instance.collection('users').doc(otherUserId).snapshots(),
+          builder: (context, userSnapshot) {
+            String displayUserName = otherUserName;
+            String? displayUserAvatar;
+            
+            if (userSnapshot.hasData && userSnapshot.data != null && userSnapshot.data!.exists) {
+              final data = userSnapshot.data!.data() as Map<String, dynamic>;
+              displayUserName = data['name'] ?? data['displayName'] ?? otherUserName;
+              displayUserAvatar = data['profileImageUrl'] ?? data['photoURL'] ?? data['avatar'] ?? data['profilePhoto'];
+            }
+            
+            if (displayUserAvatar == null || displayUserAvatar.isEmpty) {
+              final participantsData = chatData['participants_data'] as Map<String, dynamic>?;
+              final otherData = participantsData?[otherUserId] as Map<String, dynamic>?;
+              displayUserAvatar = otherData?['profileImageUrl'] ?? (chatData['participantProfileImages'] as Map<String, dynamic>?)?[otherUserId];
+            }
+
+            return Row(
+              children: [
+                UserAvatar(
+                  imageUrl: displayUserAvatar,
+                  name: displayUserName,
+                  radius: 22,
+                  showOnlineStatus: false,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Text(
-                          otherUserName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: hasUnread ? FontWeight.bold : FontWeight.w600,
-                            color: context.textHigh,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              displayUserName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: hasUnread ? FontWeight.bold : FontWeight.w600,
+                                color: context.textHigh,
+                              ),
+                            ),
                           ),
-                        ),
+                          const SizedBox(width: 8),
+                          Text(
+                            timeStr,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: hasUnread ? (context.isDark ? Colors.white : Colors.black) : context.textLow,
+                              fontWeight: hasUnread ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        timeStr,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: hasUnread ? (context.isDark ? Colors.white : Colors.black) : context.textLow,
-                          fontWeight: hasUnread ? FontWeight.bold : FontWeight.normal,
-                        ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              lastMessage,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: hasUnread ? context.textHigh : context.textMed,
+                                fontWeight: hasUnread ? FontWeight.w500 : FontWeight.normal,
+                              ),
+                            ),
+                          ),
+                          if (hasUnread)
+                            Container(
+                              margin: const EdgeInsets.only(left: 8),
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: context.isDark ? Colors.white : Colors.black,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                        ],
                       ),
                     ],
                   ),
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          lastMessage,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: hasUnread ? context.textHigh : context.textMed,
-                            fontWeight: hasUnread ? FontWeight.w500 : FontWeight.normal,
-                          ),
-                        ),
-                      ),
-                      if (hasUnread)
-                        Container(
-                          margin: const EdgeInsets.only(left: 8),
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: context.isDark ? Colors.white : Colors.black,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
+                ),
+              ],
+            );
+          }
         ),
       ),
     );
@@ -853,7 +872,7 @@ class _NewChatModalState extends State<NewChatModal> {
                       child: Container(
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          color: context.textLow.withOpacity(0.1),
+                          color: context.textLow.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(Icons.close_rounded, size: 14, color: context.textMed),

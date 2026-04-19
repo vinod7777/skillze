@@ -180,7 +180,7 @@ class _ChatInfoScreenState extends State<ChatInfoScreen> with SingleTickerProvid
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: context.textHigh.withOpacity(0.2),
+                            color: context.textHigh.withValues(alpha: 0.2),
                             width: 2,
                           ),
                         ),
@@ -189,7 +189,7 @@ class _ChatInfoScreenState extends State<ChatInfoScreen> with SingleTickerProvid
                           name: widget.userName,
                           radius: 56,
                           gradient: LinearGradient(
-                            colors: [context.textHigh.withOpacity(0.8), context.textHigh],
+                            colors: [context.textHigh.withValues(alpha: 0.8), context.textHigh],
                           ),
                           fontSize: 48,
                         ),
@@ -308,9 +308,9 @@ class _ChatInfoScreenState extends State<ChatInfoScreen> with SingleTickerProvid
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 24),
                   decoration: BoxDecoration(
-                    color: context.surfaceLightColor.withOpacity(0.4),
+                    color: context.surfaceLightColor.withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: context.border.withOpacity(0.1)),
+                    border: Border.all(color: context.border.withValues(alpha: 0.1)),
                   ),
                   child: Column(
                     children: [
@@ -324,7 +324,7 @@ class _ChatInfoScreenState extends State<ChatInfoScreen> with SingleTickerProvid
                           onChanged: (_) => _toggleStatus('restrictedUsers', _isRestricted, 'restricted'),
                         ),
                       ),
-                      Divider(height: 1, color: context.border.withOpacity(0.1), indent: 56),
+                      Divider(height: 1, color: context.border.withValues(alpha: 0.1), indent: 56),
                       _buildSettingTile(
                         icon: _isBlocked ? Icons.security_rounded : Icons.block_flipped,
                         title: '${_isBlocked ? 'Unblock' : 'Block'} ${_userData?['name'] ?? widget.userName}',
@@ -393,7 +393,7 @@ class _ChatInfoScreenState extends State<ChatInfoScreen> with SingleTickerProvid
             width: 52,
             height: 52,
             decoration: BoxDecoration(
-              color: (color ?? context.textHigh).withOpacity(0.08),
+              color: (color ?? context.textHigh).withValues(alpha: 0.08),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color ?? context.textHigh, size: 22),
@@ -428,7 +428,7 @@ class _ChatInfoScreenState extends State<ChatInfoScreen> with SingleTickerProvid
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: (titleColor ?? context.textMed).withOpacity(0.1),
+          color: (titleColor ?? context.textMed).withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(icon, color: titleColor ?? context.textMed, size: 20),
@@ -520,7 +520,7 @@ class _SharedMediaGrid extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: context.surfaceLightColor,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: context.border.withOpacity(0.5)),
+                    border: Border.all(color: context.border.withValues(alpha: 0.5)),
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(11),
@@ -562,7 +562,7 @@ class _SharedMediaGrid extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: CircleAvatar(
-                  backgroundColor: Colors.black.withOpacity(0.5),
+                  backgroundColor: Colors.black.withValues(alpha: 0.5),
                   child: IconButton(
                     icon: const Icon(Icons.close_rounded, color: Colors.white),
                     onPressed: () => Navigator.pop(context),
@@ -582,7 +582,7 @@ class _SharedMediaGrid extends StatelessWidget {
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         children: [
-          Icon(icon, size: 48, color: context.textLow.withOpacity(0.5)),
+          Icon(icon, size: 48, color: context.textLow.withValues(alpha: 0.5)),
           const SizedBox(height: 12),
           Text(
             message, 
@@ -636,7 +636,7 @@ class _SharedLinksList extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.link_off_rounded, size: 48, color: context.textLow.withOpacity(0.5)),
+                Icon(Icons.link_off_rounded, size: 48, color: context.textLow.withValues(alpha: 0.5)),
                 const SizedBox(height: 12),
                 Text('No links shared yet', style: TextStyle(color: context.textMed, fontSize: 14)),
               ],
@@ -665,9 +665,9 @@ class LinkPreviewCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: context.surfaceLightColor.withOpacity(0.3),
+        color: context.surfaceLightColor.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: context.border.withOpacity(0.5)),
+        border: Border.all(color: context.border.withValues(alpha: 0.5)),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(10),
@@ -706,7 +706,7 @@ class LinkPreviewCard extends StatelessWidget {
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: context.border.withOpacity(0.2),
+              color: context.border.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(Icons.link_rounded, color: context.textLow),
@@ -717,9 +717,9 @@ class LinkPreviewCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(width: 120, height: 12, decoration: BoxDecoration(color: context.border.withOpacity(0.2), borderRadius: BorderRadius.circular(4))),
+                Container(width: 120, height: 12, decoration: BoxDecoration(color: context.border.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(4))),
                 const SizedBox(height: 8),
-                Container(width: 180, height: 10, decoration: BoxDecoration(color: context.border.withOpacity(0.1), borderRadius: BorderRadius.circular(4))),
+                Container(width: 180, height: 10, decoration: BoxDecoration(color: context.border.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4))),
               ],
             ),
           ),

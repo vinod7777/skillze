@@ -199,7 +199,7 @@ class _CommentsModalState extends State<CommentsModal> {
       ).showSnackBar(SnackBar(
         content: Text('Please log in to comment', style: TextStyle(color: context.onPrimary)),
         backgroundColor: context.primary,
-        action: SnackBarAction(label: 'Close', textColor: context.onPrimary.withOpacity(0.8), onPressed: () {}),
+        action: SnackBarAction(label: 'Close', textColor: context.onPrimary.withValues(alpha: 0.8), onPressed: () {}),
       ));
       return;
     }
@@ -331,7 +331,7 @@ class _CommentsModalState extends State<CommentsModal> {
         ).showSnackBar(SnackBar(
           content: Text('Failed to post comment: $e', style: TextStyle(color: context.onPrimary)),
           backgroundColor: context.primary,
-          action: SnackBarAction(label: 'Close', textColor: context.onPrimary.withOpacity(0.8), onPressed: () {}),
+          action: SnackBarAction(label: 'Close', textColor: context.onPrimary.withValues(alpha: 0.8), onPressed: () {}),
         ));
       }
     } finally {
@@ -567,7 +567,7 @@ class _CommentsModalState extends State<CommentsModal> {
               width: 48,
               height: 4,
               decoration: BoxDecoration(
-                color: context.border.withOpacity(0.1),
+                color: context.border.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -603,7 +603,7 @@ class _CommentsModalState extends State<CommentsModal> {
               ],
             ),
           ),
-          Divider(color: context.border.withOpacity(0.1)),
+          Divider(color: context.border.withValues(alpha: 0.1)),
 
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
@@ -665,7 +665,7 @@ class _CommentsModalState extends State<CommentsModal> {
           if (_replyToAuthorName != null)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              color: context.primary.withOpacity(0.05),
+              color: context.primary.withValues(alpha: 0.05),
               child: Row(
                 children: [
                    Icon(
@@ -701,7 +701,7 @@ class _CommentsModalState extends State<CommentsModal> {
               constraints: const BoxConstraints(maxHeight: 180),
               decoration: BoxDecoration(
                 color: context.surfaceLightColor,
-                border: Border(top: BorderSide(color: context.border.withOpacity(0.2))),
+                border: Border(top: BorderSide(color: context.border.withValues(alpha: 0.2))),
                 boxShadow: const [
                   BoxShadow(
                     color: Colors.black12,
@@ -747,7 +747,7 @@ class _CommentsModalState extends State<CommentsModal> {
               decoration: BoxDecoration(
                 color: context.bg,
                 border: Border(
-                  top: BorderSide(color: context.border.withOpacity(0.1)),
+                  top: BorderSide(color: context.border.withValues(alpha: 0.1)),
                 ),
               ),
               child: Row(
@@ -890,7 +890,7 @@ class _CommentsModalState extends State<CommentsModal> {
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
-                                color: context.primary.withOpacity(0.1),
+                                color: context.primary.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
@@ -1010,7 +1010,7 @@ class _CommentsModalState extends State<CommentsModal> {
                                   Text(
                                     'Delete',
                                     style: TextStyle(
-                                      color: Colors.redAccent.withOpacity(0.8),
+                                      color: Colors.redAccent.withValues(alpha: 0.8),
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -1061,7 +1061,7 @@ class _CommentsModalState extends State<CommentsModal> {
                 padding: const EdgeInsets.only(left: 12),
                 decoration: BoxDecoration(
                   border: Border(
-                    left: BorderSide(color: context.border.withOpacity(0.1), width: 2),
+                    left: BorderSide(color: context.border.withValues(alpha: 0.1), width: 2),
                   ),
                 ),
                 child: Column(
@@ -1200,7 +1200,7 @@ class _CommentsModalState extends State<CommentsModal> {
                                         child: Text(
                                           'Delete',
                                           style: TextStyle(
-                                            color: Colors.redAccent.withOpacity(0.8),
+                                            color: Colors.redAccent.withValues(alpha: 0.8),
                                             fontSize: 11,
                                             fontWeight: FontWeight.w600,
                                           ),

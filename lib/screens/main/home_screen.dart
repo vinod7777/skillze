@@ -480,10 +480,10 @@ class _HomeScreenState extends State<HomeScreen>
                   decoration: BoxDecoration(
                     color: _selectedInterestSkills.isNotEmpty ? context.primary : context.surfaceLightColor,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: context.border.withOpacity(0.3)),
+                    border: Border.all(color: context.border.withValues(alpha: 0.3)),
                     boxShadow: _selectedInterestSkills.isNotEmpty ? [
                       BoxShadow(
-                        color: context.primary.withOpacity(0.2),
+                        color: context.primary.withValues(alpha: 0.2),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       )
@@ -520,7 +520,7 @@ class _HomeScreenState extends State<HomeScreen>
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: context.primary.withOpacity(0.05),
+                    color: context.primary.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
@@ -610,7 +610,7 @@ class _HomeScreenState extends State<HomeScreen>
                   color: context.primary,
                   borderRadius: BorderRadius.circular(22),
                   boxShadow: [
-                    BoxShadow(color: context.primary.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 2)),
+                    BoxShadow(color: context.primary.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2)),
                   ],
                 ),
               ),
@@ -1203,7 +1203,7 @@ class _HomeScreenState extends State<HomeScreen>
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 20),
@@ -1310,16 +1310,16 @@ class _HomeScreenState extends State<HomeScreen>
               padding: const EdgeInsets.all(24),
               margin: const EdgeInsets.symmetric(horizontal: 24),
               decoration: BoxDecoration(
-                color: context.surfaceLightColor.withOpacity(0.5),
+                color: context.surfaceLightColor.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(32),
-                border: Border.all(color: context.border.withOpacity(0.5)),
+                border: Border.all(color: context.border.withValues(alpha: 0.5)),
               ),
               child: Column(
                 children: [
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: context.primary.withOpacity(0.1),
+                      color: context.primary.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(Icons.explore_rounded, size: 32, color: context.primary),
@@ -1442,7 +1442,7 @@ class _HomeScreenState extends State<HomeScreen>
                 style: TextButton.styleFrom(
                   foregroundColor: context.primary,
                   padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                  backgroundColor: context.primary.withOpacity(0.05),
+                  backgroundColor: context.primary.withValues(alpha: 0.05),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
               ),
@@ -1537,7 +1537,7 @@ class _HomeScreenState extends State<HomeScreen>
                   child: Icon(
                     Icons.psychology_outlined,
                     size: 48,
-                    color: context.primary.withOpacity(0.5),
+                    color: context.primary.withValues(alpha: 0.5),
                   ),
                 ),
                 const SizedBox(height: 16),

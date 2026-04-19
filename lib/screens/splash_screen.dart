@@ -263,8 +263,8 @@ class _SplashScreenState extends State<SplashScreen>
         // Icons near center = LIGHT (more transparent/faded)
         // Icons far from center = DARK (higher opacity)
         final Color iconColor = Color.lerp(
-          baseColor.withOpacity(minOpacity), 
-          baseColor.withOpacity(maxOpacity), 
+          baseColor.withValues(alpha: minOpacity), 
+          baseColor.withValues(alpha: maxOpacity), 
           t,
         )!;
 

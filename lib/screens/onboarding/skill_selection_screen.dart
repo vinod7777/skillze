@@ -312,7 +312,7 @@ class _SkillSelectionScreenState extends State<SkillSelectionScreen> {
                               padding: EdgeInsets.zero,
                               shrinkWrap: true,
                               itemCount: options.length,
-                              separatorBuilder: (context, index) => Divider(height: 1, color: context.border.withOpacity(0.5)),
+                              separatorBuilder: (context, index) => Divider(height: 1, color: context.border.withValues(alpha: 0.5)),
                               itemBuilder: (BuildContext context, int index) {
                                 final String option = options.elementAt(index);
                                 return ListTile(
@@ -352,7 +352,7 @@ class _SkillSelectionScreenState extends State<SkillSelectionScreen> {
                       border: Border.all(color: context.border, width: 1.5),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -521,7 +521,7 @@ class _SkillSelectionScreenState extends State<SkillSelectionScreen> {
         boxShadow: isSelected
             ? [
                 BoxShadow(
-                  color: context.primary.withOpacity(0.2),
+                  color: context.primary.withValues(alpha: 0.2),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 )

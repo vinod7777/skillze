@@ -20,7 +20,7 @@ class ImageViewerDialog extends StatelessWidget {
   static void show(BuildContext context, String? imageUrl, String name, {String? filePath, bool isCircular = true}) {
     showDialog(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.95),
+      barrierColor: Colors.black.withValues(alpha: 0.95),
       useSafeArea: false,
       builder: (context) => ImageViewerDialog(
         imageUrl: imageUrl, 
@@ -59,7 +59,7 @@ class ImageViewerDialog extends StatelessWidget {
                     shape: isCircular ? BoxShape.circle : BoxShape.rectangle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.4),
+                        color: Colors.black.withValues(alpha: 0.4),
                         blurRadius: 30,
                         spreadRadius: 5,
                       ),
@@ -88,7 +88,7 @@ class ImageViewerDialog extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.4),
+                      color: Colors.black.withValues(alpha: 0.4),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.close, color: Colors.white, size: 24),

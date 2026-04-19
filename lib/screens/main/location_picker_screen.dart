@@ -178,6 +178,14 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
             options: MapOptions(
               initialCenter: _selectedLocation ?? const LatLng(17.3850, 78.4867),
               initialZoom: 15.0,
+              minZoom: 6.0,
+              maxZoom: 18.0,
+              cameraConstraint: CameraConstraint.contain(
+                bounds: LatLngBounds(
+                  const LatLng(-90, -180),
+                  const LatLng(90, 180),
+                ),
+              ),
               onTap: (tapPosition, latLng) {
                 setState(() {
                   _selectedLocation = latLng;
@@ -247,7 +255,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                         maxHeight: MediaQuery.of(context).size.height * 0.4,
                       ),
                       decoration: BoxDecoration(
-                        border: Border.all(color: context.border.withOpacity(0.2)),
+                        border: Border.all(color: context.border.withValues(alpha: 0.2)),
                       ),
                       child: ListView.separated(
                         shrinkWrap: true,
@@ -255,7 +263,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                         itemCount: _suggestions.length,
                         separatorBuilder: (context, index) => Divider(
                           height: 1,
-                          color: context.border.withOpacity(0.1),
+                          color: context.border.withValues(alpha: 0.1),
                         ),
                         itemBuilder: (context, index) {
                           final suggestion = _suggestions[index];
@@ -310,7 +318,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                 borderRadius: BorderRadius.circular(8),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
@@ -321,7 +329,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: context.primary.withOpacity(0.1),
+                      color: context.primary.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(Icons.location_pin, color: context.primary, size: 24),

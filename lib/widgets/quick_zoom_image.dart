@@ -73,7 +73,7 @@ class _QuickZoomImageState extends State<QuickZoomImage> with SingleTickerProvid
                   builder: (context, matrix, _) {
                     final double scale = matrix.getMaxScaleOnAxis();
                     final double opacity = ((scale - 1) * 0.4).clamp(0.0, 0.7);
-                    return Container(color: Colors.black.withOpacity(opacity));
+                    return Container(color: Colors.black.withValues(alpha: opacity));
                   },
                 ),
               ),

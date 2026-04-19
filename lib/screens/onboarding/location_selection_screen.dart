@@ -74,7 +74,7 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
                 width: 120,
                 height: 120,
                 decoration: BoxDecoration(
-                  color: context.primary.withOpacity(0.1),
+                  color: context.primary.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(

@@ -70,7 +70,7 @@ class _ConnectionsFeedScreenState extends State<ConnectionsFeedScreen> {
       ),
       body: SafeArea(
         child: _isLoading
-            ? Center(child: CircularProgressIndicator(color: context.textHigh.withOpacity(0.2)))
+            ? Center(child: CircularProgressIndicator(color: context.textHigh.withValues(alpha: 0.2)))
             : _followingList.isEmpty
             ? Center(
                 child: Padding(
@@ -78,7 +78,7 @@ class _ConnectionsFeedScreenState extends State<ConnectionsFeedScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.people_outline_rounded, color: context.textMed.withOpacity(0.2), size: 80),
+                      Icon(Icons.people_outline_rounded, color: context.textMed.withValues(alpha: 0.2), size: 80),
                       const SizedBox(height: 24),
                       Text(
                         'You are not following anyone yet.',
@@ -113,7 +113,7 @@ class _ConnectionsFeedScreenState extends State<ConnectionsFeedScreen> {
                     .snapshots(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(child: CircularProgressIndicator(color: context.textHigh.withOpacity(0.2)));
+                    return Center(child: CircularProgressIndicator(color: context.textHigh.withValues(alpha: 0.2)));
                   }
                   if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                     return Center(

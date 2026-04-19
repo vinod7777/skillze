@@ -19,7 +19,7 @@ class AppTheme {
   static const Color textLowEmphasis = Color(0xFF666666);
 
   // Borders (Dark Mode)
-  static final Color borderOverlay = const Color(0xFFFFFFFF).withOpacity(0.15);
+  static final Color borderOverlay = const Color(0xFFFFFFFF).withValues(alpha: 0.15);
 
   // Gradients
   // Radius Constants
@@ -93,7 +93,7 @@ class AppTheme {
           backgroundColor: primaryLight,
           foregroundColor: Colors.black, // Black text on white buttons for dark theme
           elevation: 2,
-          shadowColor: Colors.black.withOpacity(0.3),
+          shadowColor: Colors.black.withValues(alpha: 0.3),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(buttonRadius)),
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
           textStyle: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 16).copyWith(inherit: true),
@@ -102,7 +102,7 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: textHighEmphasis,
-          side: BorderSide(color: textMediumEmphasis.withOpacity(0.5), width: 1),
+          side: BorderSide(color: textMediumEmphasis.withValues(alpha: 0.5), width: 1),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(buttonRadius)),
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
           textStyle: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 16).copyWith(inherit: true),
@@ -139,7 +139,7 @@ class AppTheme {
       dividerTheme: DividerThemeData(
         space: 1,
         thickness: 1,
-        color: textLowEmphasis.withOpacity(0.2),
+        color: textLowEmphasis.withValues(alpha: 0.2),
       ),
       listTileTheme: ListTileThemeData(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16),
@@ -225,7 +225,7 @@ class AppTheme {
           backgroundColor: primary,
           foregroundColor: Colors.white,
           elevation: 2,
-          shadowColor: primary.withOpacity(0.3),
+          shadowColor: primary.withValues(alpha: 0.3),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(buttonRadius)),
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
           textStyle: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 16).copyWith(inherit: true),
@@ -253,7 +253,7 @@ class AppTheme {
       cardTheme: CardThemeData(
         color: lightSurface,
         elevation: 1,
-        shadowColor: Colors.black.withOpacity(0.05),
+        shadowColor: Colors.black.withValues(alpha: 0.05),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(cardRadius),
           side: const BorderSide(color: lightBorderOverlay, width: 1),
@@ -305,7 +305,7 @@ class AmbientGlow extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: RadialGradient(
-          colors: [color.withOpacity(0.25), color.withOpacity(0.0)],
+          colors: [color.withValues(alpha: 0.25), color.withValues(alpha: 0.0)],
           stops: const [0.1, 1.0],
         ),
       ),
@@ -341,7 +341,7 @@ class GlassContainer extends StatelessWidget {
         border: Border.all(color: context.border, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
+            color: Colors.black.withValues(alpha: 0.15),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

@@ -386,7 +386,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                    color: context.primary.withOpacity(0.2),
+                                    color: context.primary.withValues(alpha: 0.2),
                                     width: 2,
                                   ),
                                 ),
@@ -498,7 +498,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                           _userData!['status'],
                           style: TextStyle(
                             fontSize: 14,
-                            color: context.textMed.withOpacity(0.8),
+                            color: context.textMed.withValues(alpha: 0.8),
                           ),
                         ),
                       ),
@@ -680,8 +680,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                                 end: Alignment.bottomRight,
                                 colors: [
                                   context.surfaceLightColor,
-                                  context.surfaceLightColor.withOpacity(0.8),
-                                  context.primary.withOpacity(0.15),
+                                  context.surfaceLightColor.withValues(alpha: 0.8),
+                                  context.primary.withValues(alpha: 0.15),
                                 ],
                               ),
                             ),
@@ -693,7 +693,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                                   left: 0,
                                   child: Icon(
                                     Icons.format_quote_rounded,
-                                    color: context.primary.withOpacity(0.2),
+                                    color: context.primary.withValues(alpha: 0.2),
                                     size: 20,
                                   ),
                                 ),
@@ -1001,7 +1001,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        side: BorderSide(color: Colors.red.withOpacity(0.5)),
+                        side: BorderSide(color: Colors.red.withValues(alpha: 0.5)),
                       ),
                       child: const Text('Remove', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
                     ),

@@ -70,7 +70,7 @@ class LinkifiedText extends StatelessWidget {
             text: matchText,
             style: highlightStyle ??
                 TextStyle(
-                  backgroundColor: Colors.yellow.withOpacity(0.3),
+                  backgroundColor: Colors.yellow.withValues(alpha: 0.3),
                   color: Colors.black,
                   fontWeight: FontWeight.bold,
                 ),
